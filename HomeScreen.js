@@ -30,6 +30,10 @@ export default function HomeScreen({ navigation }) {
   const { user, userData, logout } = useUser();
   const [showProfile, setShowProfile] = useState(false);
   const [showInviteApproval, setShowInviteApproval] = useState(false);
+
+  // Debug logging
+  console.log('HomeScreen - user:', user);
+  console.log('HomeScreen - userData:', userData);
   const [showDesignPage, setShowDesignPage] = useState(false);
   const [showOrderPage, setShowOrderPage] = useState(false);
   const [showChalanPage, setShowChalanPage] = useState(false);
@@ -312,7 +316,19 @@ export default function HomeScreen({ navigation }) {
               </View>
             </View>
             
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <TouchableOpacity 
+              style={styles.logoutButton} 
+              onPress={async () => {
+                try {
+                  console.log('Logout button pressed');
+                  await logout();
+                  console.log('Logout successful');
+                } catch (error) {
+                  console.error('Logout error:', error);
+                  Alert.alert('Error', 'Failed to logout. Please try again.');
+                }
+              }}
+            >
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>

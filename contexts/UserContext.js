@@ -148,12 +148,19 @@ export const UserProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      console.log('Starting logout process...');
       await signOut(auth);
+      console.log('Firebase signOut successful');
       setUser(null);
       setUserData(null);
       await AsyncStorage.removeItem('userData');
+      console.log('Logout completed successfully');
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if there's an error, clear local state
+      setUser(null);
+      setUserData(null);
+      await AsyncStorage.removeItem('userData');
     }
   };
 
