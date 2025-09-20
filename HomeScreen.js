@@ -60,6 +60,11 @@ export default function HomeScreen({ navigation }) {
     setShowChalanPage(true);
   };
 
+  const handleReport = () => {
+    // TODO: Implement report functionality
+    Alert.alert('Report', 'Report functionality will be implemented');
+  };
+
   const handleProfileClick = () => {
     setShowProfile(true);
     setActiveTab('PROFILE');
@@ -226,6 +231,10 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity style={styles.mainButton} onPress={handleChalanNo}>
             <Text style={styles.mainButtonText}>CHALAN NO</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.mainButton} onPress={handleReport}>
+            <Text style={styles.mainButtonText}>REPORT</Text>
           </TouchableOpacity>
         </View>
 
@@ -412,11 +421,11 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFD700',
+    backgroundColor: '#222222',
   },
   card: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#2A2A2A',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 30,
@@ -429,7 +438,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainButton: {
-    backgroundColor: '#000',
+    backgroundColor: '#3A3A3A',
     paddingHorizontal: 40,
     paddingVertical: 20,
     borderRadius: 12,
@@ -439,21 +448,23 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   mainButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     letterSpacing: 1,
   },
   navBar: {
     flexDirection: 'row',
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#1A1A1A',
     borderRadius: 25,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -468,6 +479,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   navIconButton: {
     padding: 8,
@@ -482,7 +495,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   profileModalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#2A2A2A',
     width: width * 0.8,
     height: height * 0.9,
     borderTopLeftRadius: 20,
@@ -496,6 +509,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   profileHeader: {
     flexDirection: 'row',
@@ -509,19 +524,21 @@ const styles = StyleSheet.create({
   profileTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   closeButton: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#3A3A3A',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#666',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   profileContent: {
@@ -532,13 +549,13 @@ const styles = StyleSheet.create({
   },
   profileLabel: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 5,
     fontWeight: '500',
   },
   profileValue: {
     fontSize: 16,
-    color: '#000',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   logoutButton: {
@@ -561,7 +578,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   inviteModalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#2A2A2A',
     width: width * 0.8,
     height: height * 0.9,
     borderTopLeftRadius: 20,
@@ -575,6 +592,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   inviteHeader: {
     flexDirection: 'row',
@@ -588,7 +607,7 @@ const styles = StyleSheet.create({
   inviteTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   inviteContent: {
     flex: 1,
@@ -599,17 +618,19 @@ const styles = StyleSheet.create({
   inviteSectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
     marginBottom: 15,
   },
   inviteItem: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#3A3A3A',
     borderRadius: 12,
     padding: 15,
     marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   inviteItemInfo: {
     flex: 1,
@@ -617,17 +638,17 @@ const styles = StyleSheet.create({
   inviteItemName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   inviteItemEmail: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 2,
   },
   inviteItemRole: {
     fontSize: 12,
-    color: '#007AFF',
+    color: '#00BFFF',
     fontWeight: '500',
   },
   inviteActions: {
@@ -677,7 +698,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#999',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 10,
     textAlign: 'center',
   },
@@ -688,12 +709,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',
   },
   inviteItemDate: {
     fontSize: 12,
-    color: '#999',
+    color: 'rgba(255, 255, 255, 0.5)',
     marginTop: 2,
   },
 });

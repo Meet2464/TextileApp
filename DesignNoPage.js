@@ -251,7 +251,7 @@ export default function DesignNoPage({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation?.goBack()}
         >
-          <Icon name="arrow-back" size={24} color="#000" />
+          <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Design No</Text>
         <View style={styles.placeholder} />
@@ -424,7 +424,7 @@ export default function DesignNoPage({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#222222',
   },
   header: {
     flexDirection: 'row',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#222222',
   },
   backButton: {
     padding: 8,
@@ -441,14 +441,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#2A2A2A',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 20,
@@ -466,28 +466,29 @@ const styles = StyleSheet.create({
   },
   navBar: {
     flexDirection: 'row',
-    backgroundColor: '#2C2C2E',
-    borderRadius: 30,
-    paddingVertical: 15,
-    paddingHorizontal: 25,
+    backgroundColor: '#000000',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     marginHorizontal: 20,
+    marginTop: 20,
     marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   insertButton: {
     backgroundColor: '#007AFF',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#007AFF',
@@ -506,7 +507,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#2A2A2A',
     width: width * 0.8,
     borderRadius: 20,
     padding: 20,
@@ -518,6 +519,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -531,19 +534,21 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   closeButton: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#3A3A3A',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#666',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   modalBody: {
@@ -576,34 +581,35 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFFFFF',
     marginBottom: 8,
     marginTop: 10,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#555555',
     borderRadius: 8,
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
     marginBottom: 15,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#3A3A3A',
+    color: '#FFFFFF',
   },
   imageButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#007AFF',
+    borderColor: '#00BFFF',
     borderStyle: 'dashed',
     borderRadius: 8,
     paddingVertical: 15,
     marginBottom: 15,
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#1A1A1A',
   },
   imageButtonText: {
-    color: '#007AFF',
+    color: '#00BFFF',
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 8,
@@ -630,7 +636,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: '#2A2A2A',
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 12,
@@ -645,6 +651,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   actionSheetOption: {
     paddingVertical: 18,
@@ -664,7 +672,7 @@ const styles = StyleSheet.create({
   actionSheetOptionText: {
     fontSize: 17,
     fontWeight: '400',
-    color: '#007AFF',
+    color: '#00BFFF',
     textAlign: 'center',
     letterSpacing: -0.4,
   },
@@ -687,7 +695,7 @@ const styles = StyleSheet.create({
   },
   designCard: {
     width: (width - 60) / 2, // 2 columns with margins
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#3A3A3A',
     borderRadius: 12,
     padding: 15,
     marginBottom: 20,
@@ -700,6 +708,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   cardImageContainer: {
     width: '100%',
@@ -707,7 +717,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: 12,
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#1A1A1A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -723,13 +733,13 @@ const styles = StyleSheet.create({
   },
   noImageText: {
     fontSize: 12,
-    color: '#999',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   cardDesignNumber: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFFFFF',
     marginBottom: 15,
     textAlign: 'center',
   },
@@ -763,13 +773,13 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 15,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#999',
+    color: 'rgba(255, 255, 255, 0.5)',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -781,7 +791,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 15,
   },
 });
