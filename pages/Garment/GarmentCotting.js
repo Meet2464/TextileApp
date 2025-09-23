@@ -24,22 +24,7 @@ export default function GarmentCotting({ navigation, orderData }) {
 
       <View style={styles.content}>
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Insert Details</Text>
-            <View style={styles.formCard}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Name</Text>
-                <TextInput style={styles.textInput} placeholder="Enter name" placeholderTextColor="#999" />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Chalan No</Text>
-                <TextInput style={styles.textInput} placeholder="Enter chalan no" placeholderTextColor="#999" />
-              </View>
-              <TouchableOpacity style={styles.sendButton} onPress={() => Alert.alert('Saved', 'Details captured')}>
-                <Text style={styles.sendButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <View style={styles.section} />
         </ScrollView>
       </View>
 

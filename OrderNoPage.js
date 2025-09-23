@@ -48,6 +48,7 @@ export default function OrderNoPage({ navigation }) {
   const [tempDesignNo, setTempDesignNo] = useState('');
   const [tempDesignQty, setTempDesignQty] = useState('');
   const [tempMatchingSet, setTempMatchingSet] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const formatDate = (date) => {
     if (!date) return '';
@@ -174,7 +175,8 @@ export default function OrderNoPage({ navigation }) {
     setEditingOrder(order);
     setPartyName(order.partyName);
     setSelectedDate(order.orderDate);
-    setQuantity(order.quantity.toString());
+    setQuantity(String(order?.quantity ?? ''));
+    setSelectedCategory(order?.category || '');
     const arr = Array.isArray(order.designNos) && order.designNos.length > 0 ? order.designNos : [order.designNo || ''];
     setDesignNos(arr);
     setDesignQtys(Array.isArray(order.designQtys) ? order.designQtys : new Array(arr.length).fill(''));
@@ -185,6 +187,10 @@ export default function OrderNoPage({ navigation }) {
 
   const handleUpdateOrder = async () => {
     // Validation
+    if (!selectedCategory) {
+      Alert.alert('Error', 'Please select Color Saree, White Saree, or Garments');
+      return;
+    }
     if (!partyName.trim()) {
       Alert.alert('Error', 'Please enter party name');
       return;
@@ -225,6 +231,7 @@ export default function OrderNoPage({ navigation }) {
     try {
       const orderData = {
         poNo: editingOrder.poNo, // Preserve existing P.O. NO
+        category: selectedCategory,
         partyName: partyName.trim(),
         orderDate: selectedDate,
         designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
@@ -295,6 +302,7 @@ export default function OrderNoPage({ navigation }) {
     setDesignNos(['']);
     setDesignQtys(['']);
     setMatchingNos(['']);
+    setSelectedCategory('');
     setShowInsertModal(true);
   };
 
@@ -305,6 +313,10 @@ export default function OrderNoPage({ navigation }) {
 
   const handleInsertOrder = async () => {
     // Validation
+    if (!selectedCategory) {
+      Alert.alert('Error', 'Please select Color Saree, White Saree, or Garments');
+      return;
+    }
     if (!partyName.trim()) {
       Alert.alert('Error', 'Please enter party name');
       return;
@@ -350,6 +362,7 @@ export default function OrderNoPage({ navigation }) {
       // Create order data object
       const orderData = {
         poNo: nextPoNo, // Auto-generated P.O. NO
+        category: selectedCategory,
         partyName: partyName.trim(),
         orderDate: selectedDate,
         designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
@@ -541,7 +554,24 @@ export default function OrderNoPage({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              
+              {/* Category Segmented Buttons (moved below Select Date) */}
+              <View style={styles.segmentContainer}>
+                {['Color Saree','White Saree','Garments'].map((label) => {
+                  const isActive = selectedCategory === label;
+                  return (
+                    <TouchableOpacity
+                      key={label}
+                      style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
+                      onPress={() => setSelectedCategory(label)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
               {/* Design No Inputs with Add button */}
               <View style={styles.inputContainer}>
@@ -745,12 +775,11 @@ export default function OrderNoPage({ navigation }) {
                   {Array.isArray(selectedOrder.designNos) && selectedOrder.designNos.length > 0 ? (
                     selectedOrder.designNos.map((dn, idx) => (
                       <View key={`line-${idx}`} style={styles.detailTableRow}>
-                        <Text style={[styles.detailCell, { flex: 1.2 }]}>{(dn || '').toString()}</Text>
-                        <Text style={[styles.detailCell, { flex: 0.8 }]}>{(selectedOrder.designQtys?.[idx] || '').toString()}</Text>
+                        <Text style={[styles.detailCell, { flex: 1.2 }]}>{String(dn || '')}</Text>
+                        <Text style={[styles.detailCell, { flex: 0.8 }]}>{String(selectedOrder.designQtys?.[idx] || '')}</Text>
                         <View style={{ flex: 1.2 }}>
                           <View style={styles.matchListRow}>
-                            {(selectedOrder.matchingNos?.[idx] || '')
-                              .toString()
+                            {String(selectedOrder.matchingNos?.[idx] || '')
                               .split(',')
                               .filter(Boolean)
                               .map((code) => (
@@ -764,8 +793,8 @@ export default function OrderNoPage({ navigation }) {
                     ))
                   ) : (
                     <View style={styles.detailTableRow}>
-                      <Text style={[styles.detailCell, { flex: 1.2 }]}>{selectedOrder.designNo || '-'}</Text>
-                      <Text style={[styles.detailCell, { flex: 0.8 }]}>{selectedOrder.quantity || '-'}</Text>
+                      <Text style={[styles.detailCell, { flex: 1.2 }]}>{String(selectedOrder.designNo || '-')}</Text>
+                      <Text style={[styles.detailCell, { flex: 0.8 }]}>{String(selectedOrder.quantity ?? '-')}</Text>
                       <View style={{ flex: 1.2 }} />
                     </View>
                   )}
@@ -817,6 +846,24 @@ export default function OrderNoPage({ navigation }) {
 
             {/* Modal Body */}
             <View style={styles.modalBody}>
+              {/* Category Segmented Buttons (Edit) */}
+              <View style={styles.segmentContainer}>
+                {['Color Saree','White Saree','Garments'].map((label) => {
+                  const isActive = selectedCategory === label;
+                  return (
+                    <TouchableOpacity
+                      key={label}
+                      style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
+                      onPress={() => setSelectedCategory(label)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
               {/* Party Name Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Party Name:</Text>
@@ -1160,6 +1207,39 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     paddingHorizontal: 10,
+  },
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1F1F1F',
+    borderRadius: 12,
+    padding: 4,
+    gap: 6,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2E2E2E',
+    borderWidth: 1,
+    borderColor: '#444444',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#FF6B35',
+    borderColor: '#ff5722',
+  },
+  segmentText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '700',
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  segmentTextActive: {
+    color: '#FFFFFF',
   },
   inputContainer: {
     marginBottom: 24,

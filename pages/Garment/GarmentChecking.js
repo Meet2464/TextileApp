@@ -1,10 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, TextInput, Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import InsertDetailsModal from '../../components/InsertDetailsModal';
 
 const { width } = Dimensions.get('window');
 
 export default function GarmentChecking({ navigation, orderData }) {
+  const [showInsert, setShowInsert] = useState(false);
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -22,30 +24,16 @@ export default function GarmentChecking({ navigation, orderData }) {
 
       <View style={styles.content}>
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Insert Details</Text>
-            <View style={styles.formCard}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Name</Text>
-                <TextInput style={styles.textInput} placeholder="Enter name" placeholderTextColor="#999" />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Chalan No</Text>
-                <TextInput style={styles.textInput} placeholder="Enter chalan no" placeholderTextColor="#999" />
-              </View>
-              <TouchableOpacity style={styles.sendButton} onPress={() => Alert.alert('Saved', 'Details captured')}>
-                <Text style={styles.sendButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <View style={styles.section} />
         </ScrollView>
       </View>
 
       <View style={styles.navBar}>
-        <TouchableOpacity style={styles.insertButton} onPress={() => Alert.alert('Insert', 'Add GARMENT CHECKING data')}>
+        <TouchableOpacity style={styles.insertButton} onPress={() => setShowInsert(true)}>
           <Icon name="add" size={28} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
+      <InsertDetailsModal visible={showInsert} onClose={() => setShowInsert(false)} onSave={() => Alert.alert('Saved', 'Details captured')} />
     </View>
   );
 }
