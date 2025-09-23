@@ -27,7 +27,7 @@ import WhiteSareeDelivery from './pages/WhiteSaree/WhiteSareeDelivery';
 const { width, height } = Dimensions.get('window');
 
 export default function SelectSaree({ navigation, orderData }) {
-  const [selectedSareeType, setSelectedSareeType] = useState('white');
+  const [selectedSareeType, setSelectedSareeType] = useState('color');
   const [showColorPartyOrder, setShowColorPartyOrder] = useState(false);
   const [showColorJecard, setShowColorJecard] = useState(false);
   const [showColorButtaCutting, setShowColorButtaCutting] = useState(false);
@@ -221,6 +221,10 @@ export default function SelectSaree({ navigation, orderData }) {
       iconColor: '#00BFFF',
       fullWidth: false,
     },
+  ];
+
+  const garmentButtons = [
+    ...colorSareeButtons,
   ];
 
   const getCurrentButtons = () => {
@@ -417,28 +421,7 @@ export default function SelectSaree({ navigation, orderData }) {
           <Text style={styles.sectionTitle}>Select Saree Type</Text>
           
           <View style={styles.sareeTypeButtons}>
-            {/* White Saree Button */}
-            <TouchableOpacity
-              style={[
-                styles.sareeTypeButton,
-                selectedSareeType === 'white' && styles.sareeTypeButtonSelected
-              ]}
-              onPress={() => handleSareeTypeSelect('white')}
-            >
-              <Icon 
-                name="ellipse" 
-                size={20} 
-                color={selectedSareeType === 'white' ? '#fff' : '#666'} 
-              />
-              <Text style={[
-                styles.sareeTypeButtonText,
-                selectedSareeType === 'white' && styles.sareeTypeButtonTextSelected
-              ]}>
-                White Saree
-              </Text>
-            </TouchableOpacity>
-
-            {/* Color Saree Button */}
+            {/* Color Saree Button FIRST */}
             <TouchableOpacity
               style={[
                 styles.sareeTypeButton,
@@ -451,12 +434,52 @@ export default function SelectSaree({ navigation, orderData }) {
                 size={20} 
                 color={selectedSareeType === 'color' ? '#fff' : '#666'} 
               />
-              <Text style={[
+              <Text numberOfLines={1} style={[
                 styles.sareeTypeButtonText,
                 selectedSareeType === 'color' && styles.sareeTypeButtonTextSelected
               ]}>
                 Color Saree
               </Text>
+            </TouchableOpacity>
+
+            {/* White Saree Button SECOND */}
+            <TouchableOpacity
+              style={[
+                styles.sareeTypeButton,
+                selectedSareeType === 'white' && styles.sareeTypeButtonSelected
+              ]}
+              onPress={() => handleSareeTypeSelect('white')}
+            >
+              <Icon 
+                name="ellipse" 
+                size={20} 
+                color={selectedSareeType === 'white' ? '#fff' : '#666'} 
+              />
+              <Text numberOfLines={1} style={[
+                styles.sareeTypeButtonText,
+                selectedSareeType === 'white' && styles.sareeTypeButtonTextSelected
+              ]}>
+                White Saree
+              </Text>
+            </TouchableOpacity>
+
+            {/* Garment Button THIRD */}
+            <TouchableOpacity 
+              style={[
+                styles.sareeTypeButton,
+                selectedSareeType === 'garment' && styles.sareeTypeButtonSelected
+              ]}
+              onPress={() => setSelectedSareeType('garment')}
+            >
+              <Icon 
+                name="shirt" 
+                size={20} 
+                color={selectedSareeType === 'garment' ? '#fff' : '#666'} 
+              />
+              <Text numberOfLines={1} style={[
+                styles.sareeTypeButtonText,
+                selectedSareeType === 'garment' && styles.sareeTypeButtonTextSelected
+              ]}>Garment</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -464,7 +487,7 @@ export default function SelectSaree({ navigation, orderData }) {
         {/* Process Buttons Grid - Show when saree type is selected */}
         {selectedSareeType && (
           <View style={styles.processGrid}>
-            {getCurrentButtons().map((process) => (
+            {(selectedSareeType === 'garment' ? garmentButtons : getCurrentButtons()).map((process) => (
               <TouchableOpacity
                 key={process.id}
                 style={[
@@ -537,20 +560,22 @@ const styles = StyleSheet.create({
   },
   sareeTypeButtons: {
     flexDirection: 'row',
-    gap: 15,
+    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sareeTypeButton: {
-    flex: 1,
-    flexDirection: 'row',
+    width: '32%',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     borderRadius: 16,
     backgroundColor: '#3A3A3A',
     borderWidth: 2,
     borderColor: '#555555',
-    gap: 12,
+    gap: 6,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -559,16 +584,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    minHeight: 64,
   },
   sareeTypeButtonSelected: {
     backgroundColor: '#007AFF',
     borderColor: '#007AFF',
   },
   sareeTypeButtonText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.3,
+    textAlign: 'center',
+    maxWidth: '100%',
   },
   sareeTypeButtonTextSelected: {
     color: '#fff',
@@ -579,6 +607,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
     paddingHorizontal: 8,
+  },
+  garmentButton: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6C5CE7',
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#8e79ff',
+  },
+  garmentButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   processButton: {
     alignItems: 'center',
