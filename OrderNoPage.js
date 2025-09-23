@@ -27,6 +27,8 @@ export default function OrderNoPage({ navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [quantity, setQuantity] = useState('');
   const [designNos, setDesignNos] = useState(['']);
+  const [designQtys, setDesignQtys] = useState(['']);
+  const [matchingNos, setMatchingNos] = useState(['']);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
@@ -41,6 +43,11 @@ export default function OrderNoPage({ navigation }) {
   const [editingOrder, setEditingOrder] = useState(null);
   const [showSelectSaree, setShowSelectSaree] = useState(false);
   const [selectedOrderForSaree, setSelectedOrderForSaree] = useState(null);
+  const [showDesignEditor, setShowDesignEditor] = useState(false);
+  const [activeDesignIdx, setActiveDesignIdx] = useState(null);
+  const [tempDesignNo, setTempDesignNo] = useState('');
+  const [tempDesignQty, setTempDesignQty] = useState('');
+  const [tempMatchingSet, setTempMatchingSet] = useState([]);
 
   const formatDate = (date) => {
     if (!date) return '';
@@ -119,8 +126,14 @@ export default function OrderNoPage({ navigation }) {
         });
       });
       
-      setOrdersList(orders);
-      setFilteredOrders(orders);
+      // Show newest first: higher P.O. NO on top; stable order after edits
+      const sorted = orders.sort((a, b) => {
+        const aNo = Number(a.poNo) || 0;
+        const bNo = Number(b.poNo) || 0;
+        return bNo - aNo;
+      });
+      setOrdersList(sorted);
+      setFilteredOrders(sorted);
     } catch (error) {
       console.error('Error loading orders: ', error);
       Alert.alert('Error', 'Failed to load orders');
@@ -162,11 +175,10 @@ export default function OrderNoPage({ navigation }) {
     setPartyName(order.partyName);
     setSelectedDate(order.orderDate);
     setQuantity(order.quantity.toString());
-    if (Array.isArray(order.designNos) && order.designNos.length > 0) {
-      setDesignNos(order.designNos);
-    } else {
-      setDesignNos([order.designNo || '']);
-    }
+    const arr = Array.isArray(order.designNos) && order.designNos.length > 0 ? order.designNos : [order.designNo || ''];
+    setDesignNos(arr);
+    setDesignQtys(Array.isArray(order.designQtys) ? order.designQtys : new Array(arr.length).fill(''));
+    setMatchingNos(Array.isArray(order.matchingNos) ? order.matchingNos : new Array(arr.length).fill(''));
     setShowEditModal(true);
     setShowPreviewModal(false);
   };
@@ -179,10 +191,6 @@ export default function OrderNoPage({ navigation }) {
     }
     if (!selectedDate.trim()) {
       Alert.alert('Error', 'Please select date');
-      return;
-    }
-    if (!quantity.trim()) {
-      Alert.alert('Error', 'Please enter quantity');
       return;
     }
     if (!designNos.some(n => (n || '').trim() !== '')) {
@@ -219,9 +227,10 @@ export default function OrderNoPage({ navigation }) {
         poNo: editingOrder.poNo, // Preserve existing P.O. NO
         partyName: partyName.trim(),
         orderDate: selectedDate,
-        quantity: parseInt(quantity.trim()),
         designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
         designNos: designNos.map(n => (n || '').trim()).filter(Boolean),
+        designQtys: designQtys.map(n => (n || '').trim()),
+        matchingNos: matchingNos.map(n => (n || '').trim()),
         updatedAt: serverTimestamp(),
       };
 
@@ -236,7 +245,7 @@ export default function OrderNoPage({ navigation }) {
             setPartyName('');
             setSelectedDate('');
             setQuantity('');
-            setDesignNo('');
+            setDesignNos(['']);
             setShowEditModal(false);
             setEditingOrder(null);
             // Refresh orders list
@@ -284,6 +293,8 @@ export default function OrderNoPage({ navigation }) {
     setSelectedDate('');
     setQuantity('');
     setDesignNos(['']);
+    setDesignQtys(['']);
+    setMatchingNos(['']);
     setShowInsertModal(true);
   };
 
@@ -300,10 +311,6 @@ export default function OrderNoPage({ navigation }) {
     }
     if (!selectedDate.trim()) {
       Alert.alert('Error', 'Please select date');
-      return;
-    }
-    if (!quantity.trim()) {
-      Alert.alert('Error', 'Please enter quantity');
       return;
     }
     if (!designNos.some(n => (n || '').trim() !== '')) {
@@ -345,9 +352,10 @@ export default function OrderNoPage({ navigation }) {
         poNo: nextPoNo, // Auto-generated P.O. NO
         partyName: partyName.trim(),
         orderDate: selectedDate,
-        quantity: parseInt(quantity.trim()),
         designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
         designNos: designNos.map(n => (n || '').trim()).filter(Boolean),
+        designQtys: designQtys.map(n => (n || '').trim()),
+        matchingNos: matchingNos.map(n => (n || '').trim()),
         createdAt: serverTimestamp(),
         status: 'pending', // You can add more status options
       };
@@ -366,6 +374,8 @@ export default function OrderNoPage({ navigation }) {
             setSelectedDate('');
             setQuantity('');
             setDesignNos(['']);
+            setDesignQtys(['']);
+            setMatchingNos(['']);
     setShowInsertModal(false);
             // Refresh orders list
             loadOrders();
@@ -455,7 +465,9 @@ export default function OrderNoPage({ navigation }) {
                     onPress={() => handleViewOrder(order)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.viewButtonText}>VIEW</Text>
+                    <View style={styles.viewButtonInner}>
+                      <Text style={styles.viewButtonText}>VIEW</Text>
+                    </View>
                   </TouchableOpacity>
                 </TouchableOpacity>
               ))}
@@ -529,18 +541,7 @@ export default function OrderNoPage({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Quantity Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Quantity:</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Quantity"
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  keyboardType="numeric"
-                  placeholderTextColor="#999"
-                />
-              </View>
+              
 
               {/* Design No Inputs with Add button */}
               <View style={styles.inputContainer}>
@@ -548,28 +549,30 @@ export default function OrderNoPage({ navigation }) {
                 <ScrollView style={styles.dynamicList} contentContainerStyle={styles.dynamicListContent}>
                 {designNos.map((dn, idx) => (
                   <View key={idx} style={styles.rowInput}>
-                    <TextInput
-                      style={[styles.textInput, { flex: 1 }]}
-                      placeholder={`Design No ${idx + 1}`}
-                      value={dn}
-                      onChangeText={(v) => {
-                        const next = [...designNos];
-                        next[idx] = v;
-                        setDesignNos(next);
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={[styles.textInput, { flex: 1, justifyContent: 'center' }]}
+                      onPress={() => { 
+                        setActiveDesignIdx(idx); 
+                        setTempDesignNo(dn || ''); 
+                        setTempDesignQty(designQtys[idx] || '');
+                        setTempMatchingSet(((matchingNos[idx] || '').split(',').filter(Boolean)) || []);
+                        setShowDesignEditor(true); 
                       }}
-                      placeholderTextColor="#999"
-                    />
+                    >
+                      <Text style={{ color: '#FFFFFF' }}>{(dn || '').trim() || `Design No ${idx + 1}`}</Text>
+                    </TouchableOpacity>
                     {(idx === designNos.length - 1) ? (
                       <TouchableOpacity
                         style={styles.smallAddBtn}
-                        onPress={() => setDesignNos((prev) => [...prev, ''])}
+                        onPress={() => { setDesignNos((prev) => [...prev, '']); setDesignQtys((prev)=>[...prev,'']); setMatchingNos((prev)=>[...prev,'']); }}
                       >
                         <Icon name="add" size={20} color="#fff" />
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
                         style={styles.smallRemoveBtn}
-                        onPress={() => setDesignNos((prev) => prev.filter((_, i) => i !== idx))}
+                        onPress={() => { setDesignNos((prev) => prev.filter((_, i) => i !== idx)); setDesignQtys((prev)=>prev.filter((_,i)=>i!==idx)); setMatchingNos((prev)=>prev.filter((_,i)=>i!==idx)); }}
                       >
                         <Text style={styles.smallRemoveText}>×</Text>
                       </TouchableOpacity>
@@ -730,15 +733,42 @@ export default function OrderNoPage({ navigation }) {
                   <Text style={styles.previewLabel}>Party Name:</Text>
                   <Text style={styles.previewValue}>{selectedOrder.partyName}</Text>
                 </View>
-                
-                <View style={styles.previewRow}>
-                  <Text style={styles.previewLabel}>Quantity:</Text>
-                  <Text style={styles.previewValue}>{selectedOrder.quantity}</Text>
-                </View>
-                
-                <View style={styles.previewRow}>
-                  <Text style={styles.previewLabel}>Design No:</Text>
-                  <Text style={styles.previewValue}>{selectedOrder.designNo}</Text>
+
+                {/* Line Items Table */}
+                <View style={styles.detailTableContainer}>
+                  <View style={styles.detailTableHeader}>
+                    <Text style={[styles.detailHeaderCell, { flex: 1.2 }]}>Design No</Text>
+                    <Text style={[styles.detailHeaderCell, { flex: 0.8 }]}>Qty</Text>
+                    <Text style={[styles.detailHeaderCell, { flex: 1.2 }]}>Matching No</Text>
+                  </View>
+
+                  {Array.isArray(selectedOrder.designNos) && selectedOrder.designNos.length > 0 ? (
+                    selectedOrder.designNos.map((dn, idx) => (
+                      <View key={`line-${idx}`} style={styles.detailTableRow}>
+                        <Text style={[styles.detailCell, { flex: 1.2 }]}>{(dn || '').toString()}</Text>
+                        <Text style={[styles.detailCell, { flex: 0.8 }]}>{(selectedOrder.designQtys?.[idx] || '').toString()}</Text>
+                        <View style={{ flex: 1.2 }}>
+                          <View style={styles.matchListRow}>
+                            {(selectedOrder.matchingNos?.[idx] || '')
+                              .toString()
+                              .split(',')
+                              .filter(Boolean)
+                              .map((code) => (
+                                <View key={code} style={styles.matchPill}>
+                                  <Text style={styles.matchPillText}>{code.trim()}</Text>
+                                </View>
+                              ))}
+                          </View>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <View style={styles.detailTableRow}>
+                      <Text style={[styles.detailCell, { flex: 1.2 }]}>{selectedOrder.designNo || '-'}</Text>
+                      <Text style={[styles.detailCell, { flex: 0.8 }]}>{selectedOrder.quantity || '-'}</Text>
+                      <View style={{ flex: 1.2 }} />
+                    </View>
+                  )}
                 </View>
               </View>
             )}
@@ -815,54 +845,79 @@ export default function OrderNoPage({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Quantity Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Quantity:</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter quantity"
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  keyboardType="numeric"
-                  placeholderTextColor="#999"
-                />
-              </View>
+              
 
               {/* Design No Inputs (Edit) */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Design No:</Text>
-                <ScrollView style={styles.dynamicList} contentContainerStyle={styles.dynamicListContent}>
-                {designNos.map((dn, idx) => (
-                  <View key={`edit-${idx}`} style={styles.rowInput}>
-                    <TextInput
-                      style={[styles.textInput, { flex: 1 }]}
-                      placeholder={`Design No ${idx + 1}`}
-                      value={dn}
-                      onChangeText={(v) => {
-                        const next = [...designNos];
-                        next[idx] = v;
-                        setDesignNos(next);
-                      }}
-                      placeholderTextColor="#999"
-                    />
-                    {(idx === designNos.length - 1) ? (
-                      <TouchableOpacity
-                        style={styles.smallAddBtn}
-                        onPress={() => setDesignNos((prev) => [...prev, ''])}
-                      >
-                        <Icon name="add" size={20} color="#fff" />
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.smallRemoveBtn}
-                        onPress={() => setDesignNos((prev) => prev.filter((_, i) => i !== idx))}
-                      >
-                        <Text style={styles.smallRemoveText}>×</Text>
-                      </TouchableOpacity>
-                    )}
+                <View style={styles.detailTableContainer}>
+                  <View style={styles.detailTableHeader}>
+                    <Text style={[styles.detailHeaderCell, { flex: 1.2 }]}>Design No</Text>
+                    <Text style={[styles.detailHeaderCell, { flex: 0.8 }]}>Qty</Text>
+                    <Text style={[styles.detailHeaderCell, { flex: 1.2 }]}>Matching No</Text>
+                    <Text style={[styles.detailHeaderCell, { flex: 0.5 }]}></Text>
                   </View>
-                ))}
-                </ScrollView>
+                  <ScrollView style={{ maxHeight: 220 }} contentContainerStyle={styles.dynamicListContent}>
+                    {designNos.map((dn, idx) => (
+                      <View key={`edit-${idx}`} style={[styles.detailTableRow, { alignItems: 'center' }]}>
+                        <TouchableOpacity
+                          style={{ flex: 1.2 }}
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            setActiveDesignIdx(idx);
+                            setTempDesignNo(dn || '');
+                            setTempDesignQty(designQtys[idx] || '');
+                            setTempMatchingSet(((matchingNos[idx] || '').split(',').filter(Boolean)) || []);
+                            setShowDesignEditor(true);
+                          }}
+                        >
+                          <Text style={styles.detailCell}>{(dn || '').trim() || `Design No ${idx + 1}`}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{ flex: 0.8 }}
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            setActiveDesignIdx(idx);
+                            setTempDesignNo(dn || '');
+                            setTempDesignQty(designQtys[idx] || '');
+                            setTempMatchingSet(((matchingNos[idx] || '').split(',').filter(Boolean)) || []);
+                            setShowDesignEditor(true);
+                          }}
+                        >
+                          <Text style={styles.detailCell}>{String(designQtys[idx] || '')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{ flex: 1.2 }}
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            setActiveDesignIdx(idx);
+                            setTempDesignNo(dn || '');
+                            setTempDesignQty(designQtys[idx] || '');
+                            setTempMatchingSet(((matchingNos[idx] || '').split(',').filter(Boolean)) || []);
+                            setShowDesignEditor(true);
+                          }}
+                        >
+                          <Text style={styles.detailCell}>{String(matchingNos[idx] || '').split(',').filter(Boolean).map(s => s.trim()).join(', ')}</Text>
+                        </TouchableOpacity>
+                        {(idx === designNos.length - 1) ? (
+                          <TouchableOpacity
+                            style={[styles.smallAddBtn, { width: 36, height: 36 }]}
+                            onPress={() => { setDesignNos((prev) => [...prev, '']); setDesignQtys((prev)=>[...prev,'']); setMatchingNos((prev)=>[...prev,'']); }}
+                          >
+                            <Icon name="add" size={18} color="#fff" />
+                          </TouchableOpacity>
+                        ) : (
+                          <TouchableOpacity
+                            style={[styles.smallRemoveBtn, { width: 36, height: 36 }]}
+                            onPress={() => { setDesignNos((prev) => prev.filter((_, i) => i !== idx)); setDesignQtys((prev)=>prev.filter((_,i)=>i!==idx)); setMatchingNos((prev)=>prev.filter((_,i)=>i!==idx)); }}
+                          >
+                            <Text style={[styles.smallRemoveText, { marginTop: -2 }]}>×</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
               </View>
               
               <TouchableOpacity 
@@ -875,6 +930,94 @@ export default function OrderNoPage({ navigation }) {
                 ) : (
                   <Text style={styles.sendButtonText}>Update Order</Text>
                 )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Design No Editor */}
+      <Modal
+        visible={showDesignEditor}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowDesignEditor(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Design No</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowDesignEditor(false)}>
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Design No</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder={`Design No ${((activeDesignIdx ?? 0) + 1)}`}
+                  value={tempDesignNo}
+                  onChangeText={setTempDesignNo}
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Quantity</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Quantity"
+                  value={tempDesignQty}
+                  onChangeText={setTempDesignQty}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Matching No (optional)</Text>
+                <View style={styles.matchGrid}>
+                  {[...Array(20)].map((_, i) => {
+                    const code = `M${String(i + 1).padStart(2, '0')}`;
+                    const active = tempMatchingSet.includes(code);
+                    return (
+                      <TouchableOpacity
+                        key={code}
+                        style={[styles.matchChipLight, active && styles.matchChipActive]}
+                        onPress={() => {
+                          setTempMatchingSet((prev) => {
+                            const has = prev.includes(code);
+                            if (has) return prev.filter((x) => x !== code);
+                            return [...prev, code];
+                          });
+                        }}
+                      >
+                        <Text style={[styles.matchChipLightText, active && styles.matchChipTextActive]}>{code}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={() => {
+                  const idx = activeDesignIdx ?? 0;
+                  if (!tempDesignQty || String(tempDesignQty).trim() === '') {
+                    Alert.alert('Error', 'Please enter Quantity for this design');
+                    return;
+                  }
+                  const nextNos = [...designNos];
+                  const nextQtys = [...designQtys];
+                  const nextMatch = [...matchingNos];
+                  nextNos[idx] = (tempDesignNo || '').trim();
+                  nextQtys[idx] = String(tempDesignQty).trim();
+                  nextMatch[idx] = tempMatchingSet.join(',');
+                  setDesignNos(nextNos);
+                  setDesignQtys(nextQtys);
+                  setMatchingNos(nextMatch);
+                  setShowDesignEditor(false);
+                }}
+              >
+                <Text style={styles.sendButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1059,6 +1202,34 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     marginTop: -4,
+  },
+  matchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 6,
+    justifyContent: 'space-between',
+  },
+  matchChipLight: {
+    backgroundColor: '#e9eef6',
+    borderWidth: 0,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    width: (width * 0.9 - 88) / 5,
+    alignItems: 'center',
+  },
+  matchChipLightText: {
+    color: '#1f2937',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  matchChipActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  matchChipTextActive: {
+    color: '#fff',
   },
   inputLabel: {
     fontSize: 16,
@@ -1354,12 +1525,25 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingVertical: 2,
+  },
+  viewButtonInner: {
+    backgroundColor: '#2A2A2A',
+    borderWidth: 1,
+    borderColor: '#555555',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    minWidth: 72,
+    borderRadius: 10,
     alignItems: 'center',
   },
   viewButtonText: {
-    color: '#FF6B35',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   loadingContainer: {
     flex: 1,
@@ -1456,6 +1640,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 16,
+  },
+  // Detail table inside preview
+  detailTableContainer: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#444',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  detailTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  detailHeaderCell: {
+    color: '#00BFFF',
+    fontWeight: '700',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  detailTableRow: {
+    flexDirection: 'row',
+    backgroundColor: '#2F2F2F',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3b3b3b',
+  },
+  detailCell: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  matchListRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'center',
+  },
+  matchPill: {
+    backgroundColor: '#0b2533',
+    borderWidth: 1,
+    borderColor: '#0ea5e9',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+  },
+  matchPillText: {
+    color: '#7dd3fc',
+    fontSize: 12,
+    fontWeight: '700',
   },
   editButton: {
     flex: 1,
