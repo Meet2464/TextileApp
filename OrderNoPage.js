@@ -16,6 +16,7 @@ import { db } from './firebase';
 import { useUser } from './contexts/UserContext';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import SelectSaree from './SelectSaree';
+import ColorSareePartyOrder from './pages/ColorSaree/ColorSareePartyOrder';
 
 const { width, height } = Dimensions.get('window');
 
@@ -43,6 +44,8 @@ export default function OrderNoPage({ navigation }) {
   const [editingOrder, setEditingOrder] = useState(null);
   const [showSelectSaree, setShowSelectSaree] = useState(false);
   const [selectedOrderForSaree, setSelectedOrderForSaree] = useState(null);
+  const [showColorPartyOrder, setShowColorPartyOrder] = useState(false);
+  const [partyOrderItems, setPartyOrderItems] = useState([]);
   const [showDesignEditor, setShowDesignEditor] = useState(false);
   const [activeDesignIdx, setActiveDesignIdx] = useState(null);
   const [tempDesignNo, setTempDesignNo] = useState('');
@@ -311,6 +314,27 @@ export default function OrderNoPage({ navigation }) {
     setShowSelectSaree(true);
   };
 
+  const handleSendToPartyOrder = (order) => {
+    if (!order) return;
+    const base = {
+      partyName: order.partyName,
+      poNo: order.poNo,
+      orderDate: order.orderDate,
+      companyId: order.companyId,
+    };
+    const items = Array.isArray(order.designNos) && order.designNos.length > 0
+      ? order.designNos.map((dn, idx) => ({
+          ...base,
+          designNo: String(dn || ''),
+          designQty: String(order.designQtys?.[idx] || ''),
+          matchingNo: String(order.matchingNos?.[idx] || ''),
+        }))
+      : [{ ...base, designNo: String(order.designNo || ''), designQty: String(order.quantity ?? ''), matchingNo: '' }];
+
+    setPartyOrderItems(items);
+    setShowColorPartyOrder(true);
+  };
+
   const handleInsertOrder = async () => {
     // Validation
     if (!selectedCategory) {
@@ -413,6 +437,18 @@ export default function OrderNoPage({ navigation }) {
         }}
         orderData={selectedOrderForSaree}
         allowedType={(selectedOrderForSaree?.category === 'Color Saree') ? 'color' : (selectedOrderForSaree?.category === 'White Saree') ? 'white' : (selectedOrderForSaree?.category === 'Garments') ? 'garment' : undefined}
+      />
+    );
+  }
+
+  // Direct flow to Color Saree -> Party Order with split designs
+  if (showColorPartyOrder) {
+    return (
+      <ColorSareePartyOrder
+        navigation={{
+          goBack: () => setShowColorPartyOrder(false)
+        }}
+        orderDataList={partyOrderItems}
       />
     );
   }
@@ -819,6 +855,20 @@ export default function OrderNoPage({ navigation }) {
               >
                 <Icon name="trash" size={16} color="#fff" />
                 <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Send button below Edit/Delete, centered like provided layout */}
+            <View style={{ alignItems: 'center', marginTop: 16 }}>
+              <TouchableOpacity
+                style={[styles.sendButton, styles.sendButtonSmall]}
+                activeOpacity={0.8}
+                onPress={() => {
+                  handleSendToPartyOrder(selectedOrder);
+                  setShowPreviewModal(false);
+                }}
+              >
+                <Text style={styles.sendButtonText}>Send</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1390,6 +1440,12 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 1,
     borderColor: '#ff5722',
+  },
+  sendButtonSmall: {
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 12,
   },
   sendButtonText: {
     color: '#fff',
