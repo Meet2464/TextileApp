@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,18 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width } = Dimensions.get('window');
 
 export default function ColorSareePartyOrder({ navigation, orderData }) {
+  const [showInsert, setShowInsert] = useState(false);
+  const [name, setName] = useState('');
+  const [chalanNo, setChalanNo] = useState('');
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -36,43 +42,51 @@ export default function ColorSareePartyOrder({ navigation, orderData }) {
       {/* Content */}
       <View style={styles.content}>
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.orderDetails}>
-            <Text style={styles.sectionTitle}>Order Information</Text>
-            
-            {orderData && (
-              <View style={styles.detailsCard}>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Order No:</Text>
-                  <Text style={styles.detailValue}>{orderData.poNo}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Party Name:</Text>
-                  <Text style={styles.detailValue}>{orderData.partyName}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Design No:</Text>
-                  <Text style={styles.detailValue}>{orderData.designNo}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Quantity:</Text>
-                  <Text style={styles.detailValue}>{orderData.quantity}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Order Date:</Text>
-                  <Text style={styles.detailValue}>{orderData.orderDate}</Text>
-                </View>
-              </View>
-            )}
-
-            <View style={styles.processInfo}>
-              <Text style={styles.sectionTitle}>Color Saree Process</Text>
-              <Text style={styles.processDescription}>
-                This is the Color Saree Party Order page. Here you can manage the specific processes for color saree production including JECARD, BUTTA CUTTING, BLEACH, COTTING, POSITION PRINT, FINISH, CHECKING, and DELIVERY.
-              </Text>
-            </View>
-          </View>
         </ScrollView>
       </View>
+      {/* Bottom Insert Button */}
+      <View style={styles.navBar}>
+        <TouchableOpacity style={styles.insertButton} onPress={() => setShowInsert(true)}>
+          <Icon name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+      <Modal visible={showInsert} transparent animationType="slide" onRequestClose={() => setShowInsert(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Insert Details</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowInsert(false)}>
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter name"
+                  placeholderTextColor="#999"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Chalan No</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter chalan no"
+                  placeholderTextColor="#999"
+                  value={chalanNo}
+                  onChangeText={setChalanNo}
+                />
+              </View>
+              <TouchableOpacity style={styles.sendButton} onPress={() => { setShowInsert(false); Alert.alert('Saved', 'Details captured'); }}>
+                <Text style={styles.sendButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -168,5 +182,127 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     lineHeight: 20,
+  },
+  formCard: {
+    backgroundColor: '#3A3A3A',
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#555555',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#2A2A2A',
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  sendButton: {
+    backgroundColor: '#FF6B35',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#ff5722',
+  },
+  sendButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#2F2F2F',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#555555',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#262626',
+    borderBottomWidth: 1,
+    borderBottomColor: '#444444',
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  closeButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 22,
+  },
+  modalBody: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#2F2F2F',
+  },
+  navBar: {
+    flexDirection: 'row',
+    backgroundColor: '#000000',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  insertButton: {
+    backgroundColor: '#FF6B35',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF6B35',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#ff5722',
   },
 });

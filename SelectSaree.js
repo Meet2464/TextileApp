@@ -23,6 +23,15 @@ import WhiteSareeButtaCutting from './pages/WhiteSaree/WhiteSareeButtaCutting';
 import WhiteSareeBleach from './pages/WhiteSaree/WhiteSareeBleach';
 import WhiteSareeFinish from './pages/WhiteSaree/WhiteSareeFinish';
 import WhiteSareeDelivery from './pages/WhiteSaree/WhiteSareeDelivery';
+import GarmentPartyOrder from './pages/Garment/GarmentPartyOrder';
+import GarmentEmbroidery from './pages/Garment/GarmentEmbroidery';
+import GarmentButtaCutting from './pages/Garment/GarmentButtaCutting';
+import GarmentBleach from './pages/Garment/GarmentBleach';
+import GarmentCotting from './pages/Garment/GarmentCotting';
+import GarmentPositionPrint from './pages/Garment/GarmentPositionPrint';
+import GarmentFinish from './pages/Garment/GarmentFinish';
+import GarmentChecking from './pages/Garment/GarmentChecking';
+import GarmentDelivery from './pages/Garment/GarmentDelivery';
 
 const { width, height } = Dimensions.get('window');
 
@@ -43,6 +52,15 @@ export default function SelectSaree({ navigation, orderData }) {
   const [showWhiteBleach, setShowWhiteBleach] = useState(false);
   const [showWhiteFinish, setShowWhiteFinish] = useState(false);
   const [showWhiteDelivery, setShowWhiteDelivery] = useState(false);
+  const [showGarmentPartyOrder, setShowGarmentPartyOrder] = useState(false);
+  const [showGarmentEmbroidery, setShowGarmentEmbroidery] = useState(false);
+  const [showGarmentButtaCutting, setShowGarmentButtaCutting] = useState(false);
+  const [showGarmentBleach, setShowGarmentBleach] = useState(false);
+  const [showGarmentCotting, setShowGarmentCotting] = useState(false);
+  const [showGarmentPositionPrint, setShowGarmentPositionPrint] = useState(false);
+  const [showGarmentFinish, setShowGarmentFinish] = useState(false);
+  const [showGarmentChecking, setShowGarmentChecking] = useState(false);
+  const [showGarmentDelivery, setShowGarmentDelivery] = useState(false);
 
   const handleBack = () => {
     navigation?.goBack();
@@ -107,6 +125,39 @@ export default function SelectSaree({ navigation, orderData }) {
           break;
         default:
           console.log('White Saree process not implemented:', process.id);
+      }
+    } else if (selectedSareeType === 'garment') {
+      // Use dedicated Garment pages
+      switch (process.id) {
+        case 'party-order':
+          setShowGarmentPartyOrder(true);
+          break;
+        case 'jecard':
+          setShowGarmentEmbroidery(true);
+          break;
+        case 'butta-cutting':
+          setShowGarmentButtaCutting(true);
+          break;
+        case 'bleach':
+          setShowGarmentBleach(true);
+          break;
+        case 'cotting':
+          setShowGarmentCotting(true);
+          break;
+        case 'position-print':
+          setShowGarmentPositionPrint(true);
+          break;
+        case 'finish':
+          setShowGarmentFinish(true);
+          break;
+        case 'checking':
+          setShowGarmentChecking(true);
+          break;
+        case 'delivery':
+          setShowGarmentDelivery(true);
+          break;
+        default:
+          console.log('Garment process not implemented:', process.id);
       }
     }
     console.log('Selected process:', process);
@@ -223,12 +274,14 @@ export default function SelectSaree({ navigation, orderData }) {
     },
   ];
 
-  const garmentButtons = [
-    ...colorSareeButtons,
-  ];
+  const garmentButtons = colorSareeButtons.map(btn =>
+    btn.id === 'jecard' ? { ...btn, title: 'EMBROIDERY' } : btn
+  );
 
   const getCurrentButtons = () => {
-    return selectedSareeType === 'white' ? whiteSareeButtons : colorSareeButtons;
+    if (selectedSareeType === 'white') return whiteSareeButtons;
+    if (selectedSareeType === 'garment') return garmentButtons;
+    return colorSareeButtons;
   };
 
   // Color Saree Process Pages
@@ -392,6 +445,98 @@ export default function SelectSaree({ navigation, orderData }) {
       <WhiteSareeDelivery 
         navigation={{
           goBack: () => setShowWhiteDelivery(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+
+  // Garment Pages
+  if (showGarmentPartyOrder) {
+    return (
+      <GarmentPartyOrder 
+        navigation={{
+          goBack: () => setShowGarmentPartyOrder(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentEmbroidery) {
+    return (
+      <GarmentEmbroidery 
+        navigation={{
+          goBack: () => setShowGarmentEmbroidery(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentButtaCutting) {
+    return (
+      <GarmentButtaCutting 
+        navigation={{
+          goBack: () => setShowGarmentButtaCutting(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentBleach) {
+    return (
+      <GarmentBleach 
+        navigation={{
+          goBack: () => setShowGarmentBleach(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentCotting) {
+    return (
+      <GarmentCotting 
+        navigation={{
+          goBack: () => setShowGarmentCotting(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentPositionPrint) {
+    return (
+      <GarmentPositionPrint 
+        navigation={{
+          goBack: () => setShowGarmentPositionPrint(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentFinish) {
+    return (
+      <GarmentFinish 
+        navigation={{
+          goBack: () => setShowGarmentFinish(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentChecking) {
+    return (
+      <GarmentChecking 
+        navigation={{
+          goBack: () => setShowGarmentChecking(false)
+        }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showGarmentDelivery) {
+    return (
+      <GarmentDelivery 
+        navigation={{
+          goBack: () => setShowGarmentDelivery(false)
         }}
         orderData={orderData}
       />

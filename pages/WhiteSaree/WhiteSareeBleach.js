@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,17 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import InsertDetailsModal from '../../components/InsertDetailsModal';
 
 const { width } = Dimensions.get('window');
 
 export default function WhiteSareeBleach({ navigation, orderData }) {
+  const [showInsert, setShowInsert] = useState(false);
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -36,39 +41,16 @@ export default function WhiteSareeBleach({ navigation, orderData }) {
       {/* Content */}
       <View style={styles.content}>
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.processDetails}>
-            <Text style={styles.sectionTitle}>BLEACH Process</Text>
-            
-            {orderData && (
-              <View style={styles.detailsCard}>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Order No:</Text>
-                  <Text style={styles.detailValue}>{orderData.poNo}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Party Name:</Text>
-                  <Text style={styles.detailValue}>{orderData.partyName}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Design No:</Text>
-                  <Text style={styles.detailValue}>{orderData.designNo}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Quantity:</Text>
-                  <Text style={styles.detailValue}>{orderData.quantity}</Text>
-                </View>
-              </View>
-            )}
-
-            <View style={styles.processInfo}>
-              <Text style={styles.sectionTitle}>BLEACH Process Details</Text>
-              <Text style={styles.processDescription}>
-                This is the BLEACH process page for White Saree. Here you can manage the bleaching process including chemical treatment, color removal, and fabric preparation for white saree production.
-              </Text>
-            </View>
-          </View>
+          <View style={styles.processDetails} />
         </ScrollView>
       </View>
+      {/* Bottom Insert Button */}
+      <View style={styles.navBar}>
+        <TouchableOpacity style={styles.insertButton} onPress={() => setShowInsert(true)}>
+          <Icon name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+      <InsertDetailsModal visible={showInsert} onClose={() => setShowInsert(false)} onSave={() => Alert.alert('Saved', 'Details captured')} />
     </View>
   );
 }
@@ -164,5 +146,83 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     lineHeight: 20,
+  },
+  formCard: {
+    backgroundColor: '#3A3A3A',
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#555555',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#2A2A2A',
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  sendButton: {
+    backgroundColor: '#FF6B35',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#ff5722',
+  },
+  sendButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  navBar: {
+    flexDirection: 'row',
+    backgroundColor: '#000000',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  insertButton: {
+    backgroundColor: '#FF6B35',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF6B35',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#ff5722',
   },
 });

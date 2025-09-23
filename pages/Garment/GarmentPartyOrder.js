@@ -15,7 +15,7 @@ import InsertDetailsModal from '../../components/InsertDetailsModal';
 
 const { width } = Dimensions.get('window');
 
-export default function ColorSareePositionPrint({ navigation, orderData }) {
+export default function GarmentPartyOrder({ navigation, orderData }) {
   const [showInsert, setShowInsert] = useState(false);
   return (
     <View style={styles.container}>
@@ -28,7 +28,7 @@ export default function ColorSareePositionPrint({ navigation, orderData }) {
           <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Color Saree - POSITION PRINT</Text>
+          <Text style={styles.headerTitle}>Garments - Party Order</Text>
           {orderData && (
             <Text style={styles.headerSubtitle}>
               Design: {orderData.designNo} | Party: {orderData.partyName}
@@ -41,9 +41,10 @@ export default function ColorSareePositionPrint({ navigation, orderData }) {
       {/* Content */}
       <View style={styles.content}>
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          <View style={styles.processDetails} />
+          <View style={styles.orderDetails} />
         </ScrollView>
       </View>
+
       {/* Bottom Insert Button */}
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.insertButton} onPress={() => setShowInsert(true)}>
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  processDetails: {
+  orderDetails: {
     paddingBottom: 20,
   },
   sectionTitle: {
@@ -110,42 +111,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 16,
     letterSpacing: 0.5,
-  },
-  detailsCard: {
-    backgroundColor: '#3A3A3A',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#555555',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  detailLabel: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  processInfo: {
-    backgroundColor: '#3A3A3A',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#555555',
-  },
-  processDescription: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 20,
   },
   formCard: {
     backgroundColor: '#3A3A3A',
@@ -226,3 +191,5 @@ const styles = StyleSheet.create({
     borderColor: '#ff5722',
   },
 });
+
+
