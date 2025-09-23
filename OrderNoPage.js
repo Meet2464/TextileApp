@@ -846,24 +846,6 @@ export default function OrderNoPage({ navigation }) {
 
             {/* Modal Body */}
             <View style={styles.modalBody}>
-              {/* Category Segmented Buttons (Edit) */}
-              <View style={styles.segmentContainer}>
-                {['Color Saree','White Saree','Garments'].map((label) => {
-                  const isActive = selectedCategory === label;
-                  return (
-                    <TouchableOpacity
-                      key={label}
-                      style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
-                      onPress={() => setSelectedCategory(label)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
               {/* Party Name Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Party Name:</Text>
@@ -890,6 +872,25 @@ export default function OrderNoPage({ navigation }) {
                     <Icon name="calendar-outline" size={20} color="#666" />
                   </View>
                 </TouchableOpacity>
+              </View>
+
+              {/* Category Segmented Buttons (Edit - moved below Select Date) */}
+              <View style={styles.segmentContainer}>
+                {['Color Saree','White Saree','Garments'].map((label) => {
+                  const isActive = selectedCategory === label;
+                  return (
+                    <TouchableOpacity
+                      key={label}
+                      style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
+                      onPress={() => setSelectedCategory(label)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               
