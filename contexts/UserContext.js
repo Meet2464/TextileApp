@@ -169,6 +169,10 @@ export const UserProvider = ({ children }) => {
     userData,
     loading,
     logout,
+    getTenantId: () => {
+      const tenant = (userData && (userData.companyId || userData.company?.id || userData.companyName)) || 'default';
+      return tenant;
+    },
   };
 
   return (

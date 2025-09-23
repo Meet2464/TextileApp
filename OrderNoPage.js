@@ -13,12 +13,14 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { db } from './firebase';
+import { useUser } from './contexts/UserContext';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import SelectSaree from './SelectSaree';
 
 const { width, height } = Dimensions.get('window');
 
 export default function OrderNoPage({ navigation }) {
+  const { userData, getTenantId } = useUser?.() || {};
   const [showInsertModal, setShowInsertModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [partyName, setPartyName] = useState('');
@@ -103,7 +105,10 @@ export default function OrderNoPage({ navigation }) {
   const loadOrders = async () => {
     setLoadingOrders(true);
     try {
-      const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+      const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
+      const ordersQuery = tenantId
+        ? query(collection(db, 'orders'), where('companyId', '==', tenantId))
+        : query(collection(db, 'orders'));
       const querySnapshot = await getDocs(ordersQuery);
       const orders = [];
       
@@ -183,7 +188,7 @@ export default function OrderNoPage({ navigation }) {
 
     // Validate design number exists in Design No page (designs collection)
     try {
-      const designsRef = collection(db, 'designs');
+      const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
       const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
       const designSnap = await getDocs(designQuery);
       if (designSnap.empty) {
@@ -291,7 +296,7 @@ export default function OrderNoPage({ navigation }) {
 
     // Validate design number exists in Design No page (designs collection)
     try {
-      const designsRef = collection(db, 'designs');
+      const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
       const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
       const designSnap = await getDocs(designQuery);
       if (designSnap.empty) {
@@ -308,7 +313,7 @@ export default function OrderNoPage({ navigation }) {
 
     try {
       // Get current orders count to generate P.O. NO
-      const ordersQuery = query(collection(db, 'orders'));
+      const ordersQuery = tenantId ? query(collection(db, 'orders'), where('companyId', '==', tenantId)) : query(collection(db, 'orders'));
       const querySnapshot = await getDocs(ordersQuery);
       const nextPoNo = querySnapshot.size + 1;
 
@@ -324,7 +329,7 @@ export default function OrderNoPage({ navigation }) {
       };
 
       // Save to Firebase Firestore
-      const docRef = await addDoc(collection(db, 'orders'), orderData);
+      const docRef = await addDoc(collection(db, 'orders'), { ...orderData, companyId: tenantId });
       
       console.log('Order saved with ID: ', docRef.id);
       
