@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { db } from './firebase';
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import SelectSaree from './SelectSaree';
 
 const { width, height } = Dimensions.get('window');
@@ -181,6 +181,21 @@ export default function OrderNoPage({ navigation }) {
       return;
     }
 
+    // Validate design number exists in Design No page (designs collection)
+    try {
+      const designsRef = collection(db, 'designs');
+      const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
+      const designSnap = await getDocs(designQuery);
+      if (designSnap.empty) {
+        Alert.alert('Error', 'Design No not available. Please add it in Design No page.');
+        return;
+      }
+    } catch (e) {
+      console.error('Error validating design number: ', e);
+      Alert.alert('Error', 'Could not validate Design No. Try again.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -271,6 +286,21 @@ export default function OrderNoPage({ navigation }) {
     }
     if (!designNo.trim()) {
       Alert.alert('Error', 'Please enter design number');
+      return;
+    }
+
+    // Validate design number exists in Design No page (designs collection)
+    try {
+      const designsRef = collection(db, 'designs');
+      const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
+      const designSnap = await getDocs(designQuery);
+      if (designSnap.empty) {
+        Alert.alert('Error', 'Design No not available. Please add it in Design No page.');
+        return;
+      }
+    } catch (e) {
+      console.error('Error validating design number: ', e);
+      Alert.alert('Error', 'Could not validate Design No. Try again.');
       return;
     }
 
@@ -391,9 +421,13 @@ export default function OrderNoPage({ navigation }) {
                   <Text style={styles.cell}>{order.poNo}</Text>
                   <Text style={styles.cell}>{order.partyName}</Text>
                   <Text style={styles.cell}>{order.orderDate}</Text>
-                  <View style={styles.viewButton}>
+                  <TouchableOpacity 
+                    style={styles.viewButton}
+                    onPress={() => handleViewOrder(order)}
+                    activeOpacity={0.7}
+                  >
                     <Text style={styles.viewButtonText}>VIEW</Text>
-                  </View>
+                  </TouchableOpacity>
                 </TouchableOpacity>
               ))}
             </View>

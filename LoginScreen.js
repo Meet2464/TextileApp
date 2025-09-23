@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Dimensions,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -132,10 +133,11 @@ export default function LoginScreen({ navigation }) {
     >
       {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.appTitle}>TextileApp</Text>
-        <View style={styles.playIcon}>
-          <Text style={styles.playIconText}>▶</Text>
-        </View>
+        <Image
+          source={require('./assets/Enter-logo.png')}
+          style={styles.appLogo}
+          resizeMode="contain"
+        />
       </View>
 
       {/* Main Content Card */}
@@ -236,17 +238,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD700', // Yellow background
   },
   header: {
-    height: height * 0.2,
+    height: height * 0.18,
     backgroundColor: '#FFD700',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingTop: 50,
+    paddingHorizontal: 12,
   },
-  appTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 5,
+  appLogo: {
+    width: width * 0.9,
+    height: 300,
+    alignSelf: 'flex-start',
   },
   playIcon: {
     width: 30,

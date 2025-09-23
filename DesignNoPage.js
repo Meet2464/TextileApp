@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,12 +16,17 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
+// Use legacy API to avoid deprecation runtime error in current Expo SDK
+import * as FileSystem from 'expo-file-system/legacy';
 import { db } from './firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, getDocs, where } from 'firebase/firestore';
+import { supabase } from './supabase';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 
 const { width, height } = Dimensions.get('window');
 
 export default function DesignNoPage({ navigation }) {
+  const listRef = useRef(null);
   const [showInsertModal, setShowInsertModal] = useState(false);
   const [showImageActionSheet, setShowImageActionSheet] = useState(false);
   const [designNumber, setDesignNumber] = useState('');
@@ -29,34 +34,46 @@ export default function DesignNoPage({ navigation }) {
   const [designList, setDesignList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingDesign, setEditingDesign] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredDesigns, setFilteredDesigns] = useState([]);
+  const [duplicateError, setDuplicateError] = useState('');
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewDesign, setViewDesign] = useState(null);
 
-  // Load designs from database on component mount
+  // Live sync (AJAX-style) with Firestore - no manual reloads needed
   useEffect(() => {
-    loadDesigns();
-  }, []);
-
-  const loadDesigns = async () => {
-    try {
-      setLoading(true);
-      const designsCollection = collection(db, 'designs');
-      const q = query(designsCollection, orderBy('dateAdded', 'desc'));
-      const querySnapshot = await getDocs(q);
-      
-      const designs = [];
-      querySnapshot.forEach((doc) => {
-        designs.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      
+    const designsCollection = collection(db, 'designs');
+    const q = query(designsCollection, orderBy('dateAdded', 'desc'));
+    setLoading(true);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const designs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       setDesignList(designs);
-    } catch (error) {
-      console.error('Error loading designs:', error);
-      Alert.alert('Error', 'Failed to load designs');
-    } finally {
+      setFilteredDesigns((prev) => {
+        // If there is an active search, re-filter on new data
+        if (!searchQuery || searchQuery.trim() === '') return designs;
+        const normalized = searchQuery.trim().toLowerCase();
+        return designs.filter(item => (item.designNumber || '').toString().toLowerCase().includes(normalized));
+      });
       setLoading(false);
+    }, (error) => {
+      console.error('Error loading designs:', error);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [db]);
+
+  // Search handler
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (!query || query.trim() === '') {
+      setFilteredDesigns(designList);
+      return;
     }
+    const normalized = query.trim().toLowerCase();
+    const results = designList.filter(item =>
+      (item.designNumber || '').toString().toLowerCase().includes(normalized)
+    );
+    setFilteredDesigns(results);
   };
 
   const saveDesignToDatabase = async (designData) => {
@@ -90,12 +107,79 @@ export default function DesignNoPage({ navigation }) {
     }
   };
 
+// Supabase Storage configuration
+const SUPABASE_BUCKET = 'design-img';
+
+const getFileExtensionFromUri = (uri) => {
+  try {
+    const path = uri.split('?')[0];
+    const parts = path.split('.');
+    const ext = parts.length > 1 ? parts.pop().toLowerCase() : 'jpg';
+    return ext || 'jpg';
+  } catch (e) {
+    return 'jpg';
+  }
+};
+
+const isLocalUri = (uri) => {
+  return typeof uri === 'string' && (uri.startsWith('file:') || uri.startsWith('content:'));
+};
+
+// Upload image to Supabase and return public URL
+const uploadImageToSupabase = async (localUri) => {
+  const extension = getFileExtensionFromUri(localUri);
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+  const filePath = `design-images/${fileName}`;
+
+  let uploadBody;
+  let contentType = `image/${extension}`;
+  try {
+    if (localUri.startsWith('file:')) {
+      const base64 = await FileSystem.readAsStringAsync(localUri, { encoding: 'base64' });
+      uploadBody = decodeBase64(base64);
+    } else if (localUri.startsWith('content:')) {
+      const cachePath = FileSystem.cacheDirectory + fileName;
+      await FileSystem.copyAsync({ from: localUri, to: cachePath });
+      const base64 = await FileSystem.readAsStringAsync(cachePath, { encoding: 'base64' });
+      uploadBody = decodeBase64(base64);
+    } else {
+      const res = await fetch(localUri);
+      const ab = await res.arrayBuffer();
+      uploadBody = ab;
+      const ct = res.headers?.get?.('content-type');
+      if (ct) contentType = ct;
+    }
+  } catch (readErr) {
+    console.error('File read error:', readErr);
+    throw readErr;
+  }
+
+  const { error: uploadError } = await supabase
+    .storage
+    .from(SUPABASE_BUCKET)
+    .upload(filePath, uploadBody, { contentType, upsert: false });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(filePath);
+  return data.publicUrl;
+};
+
   const handleInsertClick = () => {
     setEditingDesign(null);
     setDesignNumber('');
     setSelectedImage(null);
+    setDuplicateError('');
     setShowInsertModal(true);
   };
+  const closeInsertModal = () => {
+    setShowInsertModal(false);
+    setDuplicateError('');
+    setDesignNumber('');
+    setSelectedImage(null);
+    setEditingDesign(null);
+  };
+
 
   const handleSelectImage = () => {
     setShowImageActionSheet(true);
@@ -110,13 +194,27 @@ export default function DesignNoPage({ navigation }) {
     }
   };
 
+  const formatDateDDMMYYYY = (dateStr) => {
+    try {
+      const d = new Date(dateStr);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const handleViewDesign = (design) => {
-    Alert.alert('View Design', `Design Number: ${design.designNumber}\nAdded: ${design.dateAdded}`);
+    setViewDesign(design);
+    setShowViewModal(true);
   };
 
   const handleEditDesign = (design) => {
     setEditingDesign(design);
     setDesignNumber(design.designNumber);
+    setDuplicateError('');
     setSelectedImage(design.image);
     setShowInsertModal(true);
   };
@@ -133,7 +231,6 @@ export default function DesignNoPage({ navigation }) {
           onPress: async () => {
             try {
               await deleteDesignFromDatabase(designId);
-              setDesignList(prevList => prevList.filter(item => item.id !== designId));
               Alert.alert('Success', 'Design deleted successfully!');
             } catch (error) {
               console.error('Error deleting design:', error);
@@ -200,12 +297,58 @@ export default function DesignNoPage({ navigation }) {
       Alert.alert('Error', 'Please enter design number');
       return;
     }
+    // Client-side duplicate check using live list
+    const normalized = designNumber.trim().toLowerCase();
+    const exists = designList.some(d => (d.designNumber || '').toString().toLowerCase() === normalized && (!editingDesign || d.id !== editingDesign.id));
+    if (exists) {
+      setDuplicateError('Design number already exists');
+      Alert.alert('Duplicate', 'This design number already exists. Please use a different number.');
+      return;
+    }
 
     try {
-      // Create new design object (image is optional)
+      setLoading(true);
+      // Server-side duplicate check to prevent race conditions
+      try {
+        const dupQ = query(collection(db, 'designs'), where('designNumber', '==', designNumber.trim()));
+        const dupSnap = await getDocs(dupQ);
+        if (editingDesign) {
+          const other = dupSnap.docs.find(d => d.id !== editingDesign.id);
+          if (other) {
+            setLoading(false);
+            Alert.alert('Duplicate', 'This design number already exists. Please use a different number.');
+            return;
+          }
+        } else if (!dupSnap.empty) {
+          setLoading(false);
+          Alert.alert('Duplicate', 'This design number already exists. Please use a different number.');
+          return;
+        }
+      } catch (dupErr) {
+        console.error('Duplicate check failed:', dupErr);
+      }
+
+      // Upload local image to Supabase so others can see it
+      let imageUrl = null;
+      if (selectedImage) {
+        if (isLocalUri(selectedImage)) {
+          try {
+            imageUrl = await uploadImageToSupabase(selectedImage);
+          } catch (e) {
+            console.error('Upload failed:', e);
+            Alert.alert('Image Upload Failed', 'Could not upload image. Please try again.');
+            setLoading(false);
+            return;
+          }
+        } else {
+          imageUrl = selectedImage; // already a URL
+        }
+      }
+
+      // Create new design object storing local URI (image is optional)
       const designData = {
         designNumber: designNumber.trim(),
-        image: selectedImage || null, // Allow null if no image selected
+        image: imageUrl,
         dateAdded: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
@@ -213,23 +356,10 @@ export default function DesignNoPage({ navigation }) {
       if (editingDesign) {
         // Update existing design
         await updateDesignInDatabase(editingDesign.id, designData);
-        setDesignList(prevList => 
-          prevList.map(item => 
-            item.id === editingDesign.id 
-              ? { ...item, ...designData }
-              : item
-          )
-        );
         Alert.alert('Success', 'Design updated successfully!');
       } else {
         // Add new design
-        const docId = await saveDesignToDatabase(designData);
-        const newDesign = {
-          id: docId,
-          ...designData,
-          dateAdded: new Date(designData.dateAdded).toLocaleDateString(),
-        };
-        setDesignList(prevList => [newDesign, ...prevList]);
+        await saveDesignToDatabase(designData);
         Alert.alert('Success', 'Design added successfully!');
       }
       
@@ -237,9 +367,17 @@ export default function DesignNoPage({ navigation }) {
       setDesignNumber('');
       setSelectedImage(null);
       setEditingDesign(null);
+      // Scroll to top to reveal the newest item (ordered by dateAdded desc)
+      setTimeout(() => {
+        try {
+          listRef.current?.scrollTo({ y: 0, animated: true });
+        } catch {}
+      }, 150);
     } catch (error) {
       console.error('Error saving design:', error);
       Alert.alert('Error', 'Failed to save design. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -272,43 +410,66 @@ export default function DesignNoPage({ navigation }) {
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={true}
               bounces={true}
+              ref={listRef}
             >
+              {/* Search Bar */}
+              <View style={styles.searchContainer}>
+                <View style={styles.searchBar}>
+                  <Icon name="search-outline" size={20} color="#666" />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search design no..."
+                    placeholderTextColor="#999"
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                  />
+                </View>
+              </View>
+
               <View style={styles.designGridContainer}>
-                {designList.map((design) => (
-                  <View key={design.id} style={styles.designCard}>
-                    <View style={styles.cardImageContainer}>
-                      {design.image ? (
-                        <Image source={{ uri: design.image }} style={styles.cardImage} />
-                      ) : (
-                        <View style={styles.noImageContainer}>
-                          <Icon name="image-outline" size={32} color="#999" />
-                          <Text style={styles.noImageText}>No Image</Text>
-                        </View>
-                      )}
+                {filteredDesigns.length > 0 ? (
+                  filteredDesigns.map((design) => (
+                    <View key={design.id} style={styles.designCard}>
+                      <View style={styles.cardImageContainer}>
+                        {design.image ? (
+                          <Image source={{ uri: design.image }} style={styles.cardImage} />
+                        ) : (
+                          <View style={styles.noImageContainer}>
+                            <Icon name="image-outline" size={32} color="#999" />
+                            <Text style={styles.noImageText}>No Image</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.cardDesignNumber}>{design.designNumber}</Text>
+                      <View style={styles.cardButtons}>
+                        <TouchableOpacity 
+                          style={[styles.actionButton, styles.viewButton]}
+                          onPress={() => handleViewDesign(design)}
+                        >
+                          <Icon name="eye" size={20} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.actionButton, styles.editButton]}
+                          onPress={() => handleEditDesign(design)}
+                        >
+                          <Icon name="pencil" size={20} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={[styles.actionButton, styles.deleteButton]}
+                          onPress={() => handleDeleteDesign(design.id)}
+                        >
+                          <Icon name="trash" size={20} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                    <Text style={styles.cardDesignNumber}>{design.designNumber}</Text>
-                    <View style={styles.cardButtons}>
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.viewButton]}
-                        onPress={() => handleViewDesign(design)}
-                      >
-                        <Icon name="eye" size={20} color="#fff" />
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.editButton]}
-                        onPress={() => handleEditDesign(design)}
-                      >
-                        <Icon name="pencil" size={20} color="#fff" />
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.deleteButton]}
-                        onPress={() => handleDeleteDesign(design.id)}
-                      >
-                        <Icon name="trash" size={20} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Icon name="images-outline" size={64} color="#ccc" />
+                    <Text style={styles.emptyStateText}>No designs found</Text>
+                    <Text style={styles.emptyStateSubtext}>Try a different search term</Text>
                   </View>
-                ))}
+                )}
               </View>
             </ScrollView>
           ) : (
@@ -333,7 +494,7 @@ export default function DesignNoPage({ navigation }) {
         visible={showInsertModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowInsertModal(false)}
+        onRequestClose={closeInsertModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -343,7 +504,7 @@ export default function DesignNoPage({ navigation }) {
               </Text>
               <TouchableOpacity 
                 style={styles.closeButton}
-                onPress={() => setShowInsertModal(false)}
+                onPress={closeInsertModal}
               >
                 <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
@@ -356,9 +517,18 @@ export default function DesignNoPage({ navigation }) {
                   style={styles.textInput}
                   placeholder="Enter design number"
                   value={designNumber}
-                  onChangeText={setDesignNumber}
+                  onChangeText={(v) => {
+                    setDesignNumber(v);
+                    const n = v.trim().toLowerCase();
+                    if (!n) { setDuplicateError(''); return; }
+                    const ex = designList.some(d => (d.designNumber || '').toString().toLowerCase() === n && (!editingDesign || d.id !== editingDesign.id));
+                    setDuplicateError(ex ? 'Design number already exists' : '');
+                  }}
                   placeholderTextColor="#999"
                 />
+                {!!duplicateError && (
+                  <Text style={styles.errorText}>{duplicateError}</Text>
+                )}
                 
                 <Text style={styles.fieldLabel}>Select Image:</Text>
                 <TouchableOpacity style={styles.imageButton} onPress={handleSelectImage}>
@@ -417,6 +587,50 @@ export default function DesignNoPage({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* View Design Modal */}
+      <Modal
+        visible={showViewModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowViewModal(false)}
+      >
+        <View style={styles.viewOverlay}>
+          <View style={styles.viewCard}>
+            <View style={styles.viewHeaderRow}>
+              <Text style={styles.viewHeaderTitle}>Design Preview</Text>
+              <TouchableOpacity style={styles.viewClose} onPress={() => setShowViewModal(false)}>
+                <Text style={styles.viewCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.viewImageContainer}>
+              {viewDesign?.image ? (
+                <Image source={{ uri: viewDesign.image }} style={styles.viewImage} />
+              ) : (
+                <View style={styles.noImageContainer}>
+                  <Icon name="image-outline" size={48} color="#999" />
+                  <Text style={styles.noImageText}>No Image</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.viewMetaBox}>
+              <View style={styles.metaRow}>
+                <Icon name="pricetag" size={16} color="#9EC8FF" />
+                <Text style={styles.viewMetaLabel}>Design No</Text>
+                <Text style={styles.viewMetaValue}>{viewDesign?.designNumber || '-'}</Text>
+              </View>
+              <View style={styles.metaDivider} />
+              <View style={styles.metaRow}>
+                <Icon name="calendar" size={16} color="#9EC8FF" />
+                <Text style={styles.viewMetaLabel}>Added</Text>
+                <Text style={styles.viewMetaValue}>{formatDateDDMMYYYY(viewDesign?.dateAdded)}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -456,6 +670,26 @@ const styles = StyleSheet.create({
   },
   contentCard: {
     flex: 1,
+  },
+  searchContainer: {
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3A3A3A',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#FFFFFF',
   },
   welcomeText: {
     fontSize: 24,
@@ -574,6 +808,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  errorText: {
+    color: '#ff6b6b',
+    marginTop: 4,
+    marginBottom: 8,
+    fontSize: 12,
+  },
   inputContainer: {
     width: '100%',
     marginBottom: 20,
@@ -679,6 +919,102 @@ const styles = StyleSheet.create({
   actionSheetSeparator: {
     height: 0,
     backgroundColor: 'transparent',
+  },
+  viewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  viewCard: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 16,
+    width: '90%',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  viewHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  viewHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  viewClose: {
+    marginLeft: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#3A3A3A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewCloseText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  viewImageContainer: {
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#1A1A1A',
+    marginBottom: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  viewTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  viewSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+  },
+  viewMetaBox: {
+    backgroundColor: '#222',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#4b4b4b',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 6,
+  },
+  viewMetaLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
+  },
+  viewMetaValue: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  metaDivider: {
+    height: 1,
+    backgroundColor: '#3A3A3A',
+    marginVertical: 4,
+    opacity: 0.7,
   },
   scrollContainer: {
     flex: 1,
