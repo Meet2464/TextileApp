@@ -35,8 +35,9 @@ import GarmentDelivery from './pages/Garment/GarmentDelivery';
 
 const { width, height } = Dimensions.get('window');
 
-export default function SelectSaree({ navigation, orderData }) {
-  const [selectedSareeType, setSelectedSareeType] = useState('color');
+export default function SelectSaree({ navigation, orderData, allowedType }) {
+  // If allowedType is provided, lock the page to that category
+  const [selectedSareeType, setSelectedSareeType] = useState(allowedType || 'color');
   const [showColorPartyOrder, setShowColorPartyOrder] = useState(false);
   const [showColorJecard, setShowColorJecard] = useState(false);
   const [showColorButtaCutting, setShowColorButtaCutting] = useState(false);
@@ -67,8 +68,11 @@ export default function SelectSaree({ navigation, orderData }) {
   };
 
   const handleSareeTypeSelect = (type) => {
+    if (allowedType && type !== allowedType) return;
     setSelectedSareeType(type);
   };
+
+  const shouldShowButton = (type) => !allowedType || allowedType === type;
 
   const handleProcessSelect = (process) => {
     if (selectedSareeType === 'color') {
@@ -554,19 +558,22 @@ export default function SelectSaree({ navigation, orderData }) {
           <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Select Saree Type</Text>
+          <Text style={styles.headerTitle}>
+            {allowedType === 'color' ? 'Color Saree' : allowedType === 'white' ? 'White Saree' : allowedType === 'garment' ? 'Garment' : 'Select Saree Type'}
+          </Text>
         </View>
         <View style={styles.placeholder} />
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Select Saree Type Section */}
+        {/* Select Saree Type Section (show only when no lock) */}
+        {!allowedType && (
         <View style={styles.sareeTypeSection}>
           <Text style={styles.sectionTitle}>Select Saree Type</Text>
-          
           <View style={styles.sareeTypeButtons}>
             {/* Color Saree Button FIRST */}
+            {shouldShowButton('color') && (
             <TouchableOpacity
               style={[
                 styles.sareeTypeButton,
@@ -586,8 +593,10 @@ export default function SelectSaree({ navigation, orderData }) {
                 Color Saree
               </Text>
             </TouchableOpacity>
+            )}
 
             {/* White Saree Button SECOND */}
+            {shouldShowButton('white') && (
             <TouchableOpacity
               style={[
                 styles.sareeTypeButton,
@@ -607,14 +616,16 @@ export default function SelectSaree({ navigation, orderData }) {
                 White Saree
               </Text>
             </TouchableOpacity>
+            )}
 
             {/* Garment Button THIRD */}
+            {shouldShowButton('garment') && (
             <TouchableOpacity 
               style={[
                 styles.sareeTypeButton,
                 selectedSareeType === 'garment' && styles.sareeTypeButtonSelected
               ]}
-              onPress={() => setSelectedSareeType('garment')}
+              onPress={() => handleSareeTypeSelect('garment')}
             >
               <Icon 
                 name="shirt" 
@@ -626,8 +637,10 @@ export default function SelectSaree({ navigation, orderData }) {
                 selectedSareeType === 'garment' && styles.sareeTypeButtonTextSelected
               ]}>Garment</Text>
             </TouchableOpacity>
+            )}
           </View>
         </View>
+        )}
 
         {/* Process Buttons Grid - Show when saree type is selected */}
         {selectedSareeType && (
