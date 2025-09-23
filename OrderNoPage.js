@@ -436,6 +436,7 @@ export default function OrderNoPage({ navigation }) {
           goBack: () => setShowSelectSaree(false)
         }}
         orderData={selectedOrderForSaree}
+        allowedType={(selectedOrderForSaree?.category === 'Color Saree') ? 'color' : (selectedOrderForSaree?.category === 'White Saree') ? 'white' : (selectedOrderForSaree?.category === 'Garments') ? 'garment' : undefined}
       />
     );
   }
