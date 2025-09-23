@@ -188,6 +188,7 @@ export default function OrderNoPage({ navigation }) {
 
     // Validate design number exists in Design No page (designs collection)
     try {
+      const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
       const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
       const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
       const designSnap = await getDocs(designQuery);
@@ -296,6 +297,7 @@ export default function OrderNoPage({ navigation }) {
 
     // Validate design number exists in Design No page (designs collection)
     try {
+      const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
       const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
       const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
       const designSnap = await getDocs(designQuery);
@@ -312,6 +314,7 @@ export default function OrderNoPage({ navigation }) {
     setIsLoading(true);
 
     try {
+      const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
       // Get current orders count to generate P.O. NO
       const ordersQuery = tenantId ? query(collection(db, 'orders'), where('companyId', '==', tenantId)) : query(collection(db, 'orders'));
       const querySnapshot = await getDocs(ordersQuery);
