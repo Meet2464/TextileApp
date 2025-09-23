@@ -27,7 +27,7 @@ import ChalanNoPage from './ChalanNoPage';
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
-  const { user, userData, logout } = useUser();
+  const { user, userData, logout, getTenantId } = useUser();
   const [showProfile, setShowProfile] = useState(false);
   const [showInviteApproval, setShowInviteApproval] = useState(false);
 
@@ -108,9 +108,10 @@ export default function HomeScreen({ navigation }) {
     
     setLoadingRequests(true);
     try {
+      const tenantId = getTenantId?.() || userData.companyId;
       const q = query(
         collection(db, 'approvalRequests'),
-        where('bossCompanyId', '==', userData.companyId),
+        where('bossCompanyId', '==', tenantId),
         where('status', '==', 'pending')
       );
       const querySnapshot = await getDocs(q);

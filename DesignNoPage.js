@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 // Use legacy API to avoid deprecation runtime error in current Expo SDK
 import * as FileSystem from 'expo-file-system/legacy';
 import { db } from './firebase';
+import { useUser } from './contexts/UserContext';
 import { collection, addDoc, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, getDocs, where } from 'firebase/firestore';
 import { supabase } from './supabase';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
@@ -27,6 +28,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function DesignNoPage({ navigation }) {
   const listRef = useRef(null);
+  const { userData, getTenantId } = useUser?.() || {};
   const [showInsertModal, setShowInsertModal] = useState(false);
   const [showImageActionSheet, setShowImageActionSheet] = useState(false);
   const [designNumber, setDesignNumber] = useState('');
@@ -43,13 +45,33 @@ export default function DesignNoPage({ navigation }) {
   // Live sync (AJAX-style) with Firestore - no manual reloads needed
   useEffect(() => {
     const designsCollection = collection(db, 'designs');
-    const q = query(designsCollection, orderBy('dateAdded', 'desc'));
+    const tenantId = getTenantId?.() || ((userData && (userData.companyId || userData.company?.id || userData.companyName)) || 'default');
+    // Avoid composite index requirement by filtering only and sorting client-side
+    const q = query(designsCollection, where('companyId', '==', tenantId));
     setLoading(true);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const designs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      let designs = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => new Date(b?.dateAdded || 0) - new Date(a?.dateAdded || 0));
+
+      // Fallback: if nothing found (legacy data without companyId), include docs missing companyId
+      if (designs.length === 0) {
+        try {
+          const allSnap = await getDocs(designsCollection);
+          const legacy = allSnap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(d => !d.companyId)
+            .sort((a, b) => new Date(b?.dateAdded || 0) - new Date(a?.dateAdded || 0));
+          if (legacy.length > 0) {
+            designs = legacy;
+          }
+        } catch (e) {
+          // ignore fallback errors
+        }
+      }
+
       setDesignList(designs);
       setFilteredDesigns((prev) => {
-        // If there is an active search, re-filter on new data
         if (!searchQuery || searchQuery.trim() === '') return designs;
         const normalized = searchQuery.trim().toLowerCase();
         return designs.filter(item => (item.designNumber || '').toString().toLowerCase().includes(normalized));
@@ -60,7 +82,7 @@ export default function DesignNoPage({ navigation }) {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [db]);
+  }, [db, userData]);
 
   // Search handler
   const handleSearch = (query) => {
@@ -308,9 +330,14 @@ const uploadImageToSupabase = async (localUri) => {
 
     try {
       setLoading(true);
-      // Server-side duplicate check to prevent race conditions
+      // Server-side duplicate check to prevent race conditions (scoped to company)
       try {
-        const dupQ = query(collection(db, 'designs'), where('designNumber', '==', designNumber.trim()));
+        const tenantId = getTenantId?.() || ((userData && (userData.companyId || userData.company?.id || userData.companyName)) || 'default');
+        const dupQ = query(
+          collection(db, 'designs'),
+          where('companyId', '==', tenantId),
+          where('designNumber', '==', designNumber.trim())
+        );
         const dupSnap = await getDocs(dupQ);
         if (editingDesign) {
           const other = dupSnap.docs.find(d => d.id !== editingDesign.id);
@@ -346,11 +373,13 @@ const uploadImageToSupabase = async (localUri) => {
       }
 
       // Create new design object storing local URI (image is optional)
+      const tenantId = getTenantId?.() || ((userData && (userData.companyId || userData.company?.id || userData.companyName)) || 'default');
       const designData = {
         designNumber: designNumber.trim(),
         image: imageUrl,
         dateAdded: new Date().toISOString(),
         createdAt: new Date().toISOString(),
+        companyId: tenantId,
       };
 
       if (editingDesign) {
