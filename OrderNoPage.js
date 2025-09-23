@@ -26,7 +26,7 @@ export default function OrderNoPage({ navigation }) {
   const [partyName, setPartyName] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [designNo, setDesignNo] = useState('');
+  const [designNos, setDesignNos] = useState(['']);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [tempSelectedDate, setTempSelectedDate] = useState(new Date());
@@ -162,7 +162,11 @@ export default function OrderNoPage({ navigation }) {
     setPartyName(order.partyName);
     setSelectedDate(order.orderDate);
     setQuantity(order.quantity.toString());
-    setDesignNo(order.designNo);
+    if (Array.isArray(order.designNos) && order.designNos.length > 0) {
+      setDesignNos(order.designNos);
+    } else {
+      setDesignNos([order.designNo || '']);
+    }
     setShowEditModal(true);
     setShowPreviewModal(false);
   };
@@ -181,20 +185,26 @@ export default function OrderNoPage({ navigation }) {
       Alert.alert('Error', 'Please enter quantity');
       return;
     }
-    if (!designNo.trim()) {
-      Alert.alert('Error', 'Please enter design number');
+    if (!designNos.some(n => (n || '').trim() !== '')) {
+      Alert.alert('Error', 'Please enter at least one design number');
       return;
     }
 
     // Validate design number exists in Design No page (designs collection)
     try {
       const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
-      const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
-      const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
-      const designSnap = await getDocs(designQuery);
-      if (designSnap.empty) {
-        Alert.alert('Error', 'Design No not available. Please add it in Design No page.');
-        return;
+      const validNos = [];
+      for (const raw of designNos) {
+        const dn = (raw || '').trim();
+        if (!dn) continue;
+        const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
+        const designQuery = query(designsRef, where('designNumber', '==', dn));
+        const designSnap = await getDocs(designQuery);
+        if (designSnap.empty) {
+          Alert.alert('Error', `Design No ${dn} not available. Please add it in Design No page.`);
+          return;
+        }
+        validNos.push(dn);
       }
     } catch (e) {
       console.error('Error validating design number: ', e);
@@ -210,7 +220,8 @@ export default function OrderNoPage({ navigation }) {
         partyName: partyName.trim(),
         orderDate: selectedDate,
         quantity: parseInt(quantity.trim()),
-        designNo: designNo.trim(),
+        designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
+        designNos: designNos.map(n => (n || '').trim()).filter(Boolean),
         updatedAt: serverTimestamp(),
       };
 
@@ -268,6 +279,11 @@ export default function OrderNoPage({ navigation }) {
   };
 
   const handleInsertClick = () => {
+    // Reset form for a clean insert state
+    setPartyName('');
+    setSelectedDate('');
+    setQuantity('');
+    setDesignNos(['']);
     setShowInsertModal(true);
   };
 
@@ -290,20 +306,24 @@ export default function OrderNoPage({ navigation }) {
       Alert.alert('Error', 'Please enter quantity');
       return;
     }
-    if (!designNo.trim()) {
-      Alert.alert('Error', 'Please enter design number');
+    if (!designNos.some(n => (n || '').trim() !== '')) {
+      Alert.alert('Error', 'Please enter at least one design number');
       return;
     }
 
     // Validate design number exists in Design No page (designs collection)
     try {
       const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
-      const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
-      const designQuery = query(designsRef, where('designNumber', '==', designNo.trim()));
-      const designSnap = await getDocs(designQuery);
-      if (designSnap.empty) {
-        Alert.alert('Error', 'Design No not available. Please add it in Design No page.');
-        return;
+      for (const raw of designNos) {
+        const dn = (raw || '').trim();
+        if (!dn) continue;
+        const designsRef = tenantId ? query(collection(db, 'designs'), where('companyId', '==', tenantId)) : collection(db, 'designs');
+        const designQuery = query(designsRef, where('designNumber', '==', dn));
+        const designSnap = await getDocs(designQuery);
+        if (designSnap.empty) {
+          Alert.alert('Error', `Design No ${dn} not available. Please add it in Design No page.`);
+          return;
+        }
       }
     } catch (e) {
       console.error('Error validating design number: ', e);
@@ -326,7 +346,8 @@ export default function OrderNoPage({ navigation }) {
         partyName: partyName.trim(),
         orderDate: selectedDate,
         quantity: parseInt(quantity.trim()),
-        designNo: designNo.trim(),
+        designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
+        designNos: designNos.map(n => (n || '').trim()).filter(Boolean),
         createdAt: serverTimestamp(),
         status: 'pending', // You can add more status options
       };
@@ -344,7 +365,7 @@ export default function OrderNoPage({ navigation }) {
             setPartyName('');
             setSelectedDate('');
             setQuantity('');
-            setDesignNo('');
+            setDesignNos(['']);
     setShowInsertModal(false);
             // Refresh orders list
             loadOrders();
@@ -521,16 +542,41 @@ export default function OrderNoPage({ navigation }) {
                 />
               </View>
 
-              {/* Design No Input */}
+              {/* Design No Inputs with Add button */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Design No:</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Design No"
-                  value={designNo}
-                  onChangeText={setDesignNo}
-                  placeholderTextColor="#999"
-                />
+                <ScrollView style={styles.dynamicList} contentContainerStyle={styles.dynamicListContent}>
+                {designNos.map((dn, idx) => (
+                  <View key={idx} style={styles.rowInput}>
+                    <TextInput
+                      style={[styles.textInput, { flex: 1 }]}
+                      placeholder={`Design No ${idx + 1}`}
+                      value={dn}
+                      onChangeText={(v) => {
+                        const next = [...designNos];
+                        next[idx] = v;
+                        setDesignNos(next);
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                    {(idx === designNos.length - 1) ? (
+                      <TouchableOpacity
+                        style={styles.smallAddBtn}
+                        onPress={() => setDesignNos((prev) => [...prev, ''])}
+                      >
+                        <Icon name="add" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.smallRemoveBtn}
+                        onPress={() => setDesignNos((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Text style={styles.smallRemoveText}>×</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                </ScrollView>
               </View>
               
               <TouchableOpacity 
@@ -782,16 +828,41 @@ export default function OrderNoPage({ navigation }) {
                 />
               </View>
 
-              {/* Design No Input */}
+              {/* Design No Inputs (Edit) */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Design No:</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter design number"
-                  value={designNo}
-                  onChangeText={setDesignNo}
-                  placeholderTextColor="#999"
-                />
+                <ScrollView style={styles.dynamicList} contentContainerStyle={styles.dynamicListContent}>
+                {designNos.map((dn, idx) => (
+                  <View key={`edit-${idx}`} style={styles.rowInput}>
+                    <TextInput
+                      style={[styles.textInput, { flex: 1 }]}
+                      placeholder={`Design No ${idx + 1}`}
+                      value={dn}
+                      onChangeText={(v) => {
+                        const next = [...designNos];
+                        next[idx] = v;
+                        setDesignNos(next);
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                    {(idx === designNos.length - 1) ? (
+                      <TouchableOpacity
+                        style={styles.smallAddBtn}
+                        onPress={() => setDesignNos((prev) => [...prev, ''])}
+                      >
+                        <Icon name="add" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.smallRemoveBtn}
+                        onPress={() => setDesignNos((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Text style={styles.smallRemoveText}>×</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                </ScrollView>
               </View>
               
               <TouchableOpacity 
@@ -949,6 +1020,45 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 24,
+  },
+  rowInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  dynamicList: {
+    maxHeight: 200,
+    marginTop: 6,
+  },
+  dynamicListContent: {
+    paddingBottom: 6,
+  },
+  smallAddBtn: {
+    backgroundColor: '#007AFF',
+    width: 44,
+    height: 52,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1e90ff',
+  },
+  smallRemoveBtn: {
+    backgroundColor: '#dc3545',
+    width: 44,
+    height: 52,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ff6b6b',
+  },
+  smallRemoveText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    marginTop: -4,
   },
   inputLabel: {
     fontSize: 16,
