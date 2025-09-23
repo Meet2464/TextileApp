@@ -35,9 +35,12 @@ function AppContent() {
   }
 
   // If user is logged in and has userData, set default screen to Home
-  // But don't redirect if user is in registration flow
-  if (user && userData && !userData.isNewRegistration && currentScreen === 'Login') {
-    setCurrentScreen('Home');
+  // Bosses always go to Home; active employees go to Home even if isNewRegistration wasn't cleared
+  if (user && userData && currentScreen === 'Login') {
+    const shouldGoHome = userData.role === 'boss' || userData.isActive === true || userData.isNewRegistration === false;
+    if (shouldGoHome) {
+      setCurrentScreen('Home');
+    }
   }
 
   // Render different screens based on currentScreen state

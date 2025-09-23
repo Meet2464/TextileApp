@@ -47,8 +47,10 @@ export default function LoginScreen({ navigation }) {
         
         // Handle different user roles
         if (userData.role === 'boss') {
-          // Boss login - verify company ID matches
-          if (userData.companyId !== companyId.trim()) {
+          // Boss login - verify company ID matches (case-insensitive)
+          const storedCompanyId = (userData.companyId || '').toString().trim().toLowerCase();
+          const enteredCompanyId = companyId.toString().trim().toLowerCase();
+          if (storedCompanyId !== enteredCompanyId) {
             Alert.alert('Error', 'Company ID is not available');
             await auth.signOut();
             setLoading(false);
@@ -105,8 +107,10 @@ export default function LoginScreen({ navigation }) {
               );
             }
           } else {
-            // Employee is active - verify company ID
-            if (userData.companyId !== companyId.trim()) {
+            // Employee is active - verify company ID (case-insensitive)
+            const storedCompanyId = (userData.companyId || '').toString().trim().toLowerCase();
+            const enteredCompanyId = companyId.toString().trim().toLowerCase();
+            if (storedCompanyId !== enteredCompanyId) {
               Alert.alert('Error', 'Company ID is not available');
               await auth.signOut();
               setLoading(false);

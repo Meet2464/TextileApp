@@ -326,25 +326,53 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             
-            <View style={styles.profileContent}>
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileLabel}>Username:</Text>
-                <Text style={styles.profileValue}>{userData?.username || 'N/A'}</Text>
+            {/* Avatar Section */}
+            <View style={styles.avatarSection}>
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>
+                  {(userData?.username || 'U')
+                    .toString()
+                    .trim()
+                    .split(' ')
+                    .map(p => p[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </Text>
               </View>
-              
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileLabel}>Email:</Text>
-                <Text style={styles.profileValue}>{userData?.email || 'N/A'}</Text>
+              <TouchableOpacity style={styles.avatarEditButton} activeOpacity={0.8}>
+                <Icon name="pencil" size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Profile Fields */}
+            <View style={styles.fieldsContainer}>
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>Name</Text>
+                <View style={styles.fieldBox}>
+                  <Text style={styles.fieldValue}>{userData?.username || '—'}</Text>
+                </View>
               </View>
-              
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileLabel}>Company ID:</Text>
-                <Text style={styles.profileValue}>{userData?.companyId || 'N/A'}</Text>
+
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>E-mail</Text>
+                <View style={styles.fieldBox}>
+                  <Text style={styles.fieldValue}>{userData?.email || '—'}</Text>
+                </View>
               </View>
-              
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileLabel}>Role:</Text>
-                <Text style={styles.profileValue}>{userData?.role || 'N/A'}</Text>
+
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>Company ID</Text>
+                <View style={styles.fieldBox}>
+                  <Text style={styles.fieldValue}>{userData?.companyId || '—'}</Text>
+                </View>
+              </View>
+
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>Role</Text>
+                <View style={styles.fieldBox}>
+                  <Text style={styles.fieldValue}>{userData?.role || '—'}</Text>
+                </View>
               </View>
             </View>
             
@@ -610,22 +638,63 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  profileContent: {
-    flex: 1,
-  },
-  profileInfo: {
+  avatarSection: {
+    alignItems: 'center',
+    marginTop: 10,
     marginBottom: 20,
   },
-  profileLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 5,
-    fontWeight: '500',
+  avatarCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: '#3A3A3A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#555555',
   },
-  profileValue: {
-    fontSize: 16,
+  avatarText: {
+    fontSize: 28,
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '700',
+  },
+  avatarEditButton: {
+    position: 'absolute',
+    right: (width * 0.8 - 84) / 2 - 6,
+    bottom: -6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  fieldsContainer: {
+    flex: 1,
+    paddingHorizontal: 6,
+  },
+  fieldBlock: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 6,
+  },
+  fieldBox: {
+    backgroundColor: '#3A3A3A',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  fieldValue: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '500',
   },
   logoutButton: {
     backgroundColor: '#ff4444',
