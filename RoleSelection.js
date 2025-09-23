@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -18,7 +19,9 @@ export default function RoleSelection({ navigation }) {
       <View style={styles.backButtonContainer}>
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => navigation?.navigate('Login')}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
         >
             <Icon name="arrow-back" size={20} color="#000" />
         </TouchableOpacity>
@@ -26,10 +29,11 @@ export default function RoleSelection({ navigation }) {
 
       {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.appTitle}>TextileApp</Text>
-        <View style={styles.playIcon}>
-          <Text style={styles.playIconText}>▶</Text>
-        </View>
+        <Image
+          source={require('./assets/Enter-logo.png')}
+          style={styles.appLogo}
+          resizeMode="contain"
+        />
       </View>
 
       {/* Main Content Card */}
@@ -76,32 +80,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD700', // Yellow background
   },
   header: {
-    height: height * 0.2,
+    height: height * 0.18,
     backgroundColor: '#FFD700',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingTop: 50,
+    paddingHorizontal: 12,
   },
-  appTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 5,
-  },
-  playIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#FFD700',
-    borderWidth: 2,
-    borderColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playIconText: {
-    fontSize: 12,
-    color: '#000',
-    fontWeight: 'bold',
+  appLogo: {
+    width: width * 0.9,
+    height: 300,
+    alignSelf: 'flex-start',
   },
   card: {
     flex: 1,
@@ -149,9 +138,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   backButtonContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 10,
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 100,
   },
   backButton: {
     alignSelf: 'flex-start',

@@ -41,6 +41,19 @@ export default function HomeScreen({ navigation }) {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
+  const formatDDMMYYYY = (dateInput) => {
+    try {
+      const d = new Date(dateInput);
+      if (Number.isNaN(d.getTime())) return '';
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return '';
+    }
+  };
+
   // Load pending requests when userData changes
   useEffect(() => {
     if (userData?.role === 'boss' && userData?.companyId) {
@@ -257,11 +270,20 @@ export default function HomeScreen({ navigation }) {
               style={styles.navIconButton} 
               onPress={handleInviteApprovalClick}
             >
-              <Icon 
-                name="mail-outline" 
-                size={24} 
-                color={activeTab === 'INVITE' ? '#007AFF' : '#FFFFFF'} 
-              />
+              <View style={styles.iconWithBadge}>
+                <Icon 
+                  name="mail-outline" 
+                  size={24} 
+                  color={activeTab === 'INVITE' ? '#007AFF' : '#FFFFFF'} 
+                />
+                {pendingRequests.length > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                      {pendingRequests.length > 99 ? '99+' : String(pendingRequests.length)}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           )}
           
@@ -332,6 +354,15 @@ export default function HomeScreen({ navigation }) {
                   console.log('Logout button pressed');
                   await logout();
                   console.log('Logout successful');
+                    // Close modal and reset UI
+                    setShowProfile(false);
+                    setShowInviteApproval(false);
+                    setShowDesignPage(false);
+                    setShowOrderPage(false);
+                    setShowChalanPage(false);
+                    setActiveTab('HOME');
+                    // Navigate to Login screen
+                    navigation.navigate('Login');
                 } catch (error) {
                   console.error('Logout error:', error);
                   Alert.alert('Error', 'Failed to logout. Please try again.');
@@ -379,13 +410,26 @@ export default function HomeScreen({ navigation }) {
                 ) : pendingRequests.length > 0 ? (
                   pendingRequests.map((request) => (
                     <View key={request.id} style={styles.inviteItem}>
-                      <View style={styles.inviteItemInfo}>
-                        <Text style={styles.inviteItemName}>{request.employeeUsername}</Text>
-                        <Text style={styles.inviteItemEmail}>{request.employeeEmail}</Text>
-                        <Text style={styles.inviteItemRole}>Company ID: {request.requestedCompanyId}</Text>
-                        <Text style={styles.inviteItemDate}>
-                          Requested: {new Date(request.createdAt).toLocaleDateString()}
-                        </Text>
+                      <View style={styles.inviteItemLeft}>
+                        <View style={styles.inviteItemAvatar}>
+                          <Text style={styles.inviteItemAvatarText}>
+                            {(request.employeeUsername || 'U')
+                              .toString()
+                              .trim()
+                              .split(' ')
+                              .map(part => part[0])
+                              .join('')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={styles.inviteItemInfo}>
+                          <Text style={styles.inviteItemName}>{request.employeeUsername}</Text>
+                          <Text style={styles.inviteItemEmail}>{request.employeeEmail}</Text>
+                          <Text style={styles.inviteItemDate}>
+                            Requested: {formatDDMMYYYY(request.createdAt)}
+                          </Text>
+                        </View>
                       </View>
                       <View style={styles.inviteActions}>
                         <TouchableOpacity
@@ -487,6 +531,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+  },
+  iconWithBadge: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1A1A1A',
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   profileModalOverlay: {
     flex: 1,
@@ -624,7 +692,8 @@ const styles = StyleSheet.create({
   inviteItem: {
     backgroundColor: '#3A3A3A',
     borderRadius: 12,
-    padding: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -632,17 +701,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#555555',
   },
+  inviteItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  inviteItemAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4B5563',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#6B7280',
+  },
+  inviteItemAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   inviteItemInfo: {
     flex: 1,
   },
   inviteItemName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   inviteItemEmail: {
-    fontSize: 14,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 2,
   },
