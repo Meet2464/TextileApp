@@ -80,20 +80,9 @@ export default function ChalanNoPage({ navigation }) {
           <View style={styles.placeholder} />
         </View>
 
-        <View style={styles.content} />
-
-        {/* Bottom two-button panel */}
-        <View style={styles.bottomPanel}>
-          <TouchableOpacity style={styles.pillButton}>
-            <Text style={styles.pillText}>Pending data</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pillButton}>
-            <Text style={styles.pillText}>done data</Text>
-          </TouchableOpacity>
-        </View>
-
         <View style={styles.content}>
-          <View style={{ paddingHorizontal: 10 }}>
+          <View style={{ flex: 1 }}>
+            <View style={{ paddingHorizontal: 10 }}>
             <View style={styles.poTableHeader}>
               <Text style={styles.poHeaderCell}>P.O.NO</Text>
               <Text style={styles.poHeaderCell}>PARTY NAME</Text>
@@ -122,6 +111,17 @@ export default function ChalanNoPage({ navigation }) {
                 </TouchableOpacity>
               </View>
             ))}
+            </View>
+          </View>
+
+          {/* Bottom two-button panel (sticky at bottom of Party Order) */}
+          <View style={styles.bottomPanel}>
+            <TouchableOpacity style={styles.pillButton}>
+              <Text style={styles.pillText}>Pending data</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.pillButton}>
+              <Text style={styles.pillText}>done data</Text>
+            </TouchableOpacity>
           </View>
         </View>
         {/* Send to Jecard Modal (rendered within Party Order branch so it is available) */}
