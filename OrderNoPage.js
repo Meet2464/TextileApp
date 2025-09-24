@@ -15,8 +15,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { db } from './firebase';
 import { useUser } from './contexts/UserContext';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
-import SelectSaree from './SelectSaree';
-import ColorSareePartyOrder from './pages/ColorSaree/ColorSareePartyOrder';
+// SelectSaree is now accessible only via Reports
+// Removed Color/White/Garment page imports per request
 
 const { width, height } = Dimensions.get('window');
 
@@ -42,10 +42,9 @@ export default function OrderNoPage({ navigation }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
-  const [showSelectSaree, setShowSelectSaree] = useState(false);
+  // Removed inline SelectSaree view state
   const [selectedOrderForSaree, setSelectedOrderForSaree] = useState(null);
-  const [showColorPartyOrder, setShowColorPartyOrder] = useState(false);
-  const [partyOrderItems, setPartyOrderItems] = useState([]);
+  // Removed state for Color/White/Garment pages per request
   const [showDesignEditor, setShowDesignEditor] = useState(false);
   const [activeDesignIdx, setActiveDesignIdx] = useState(null);
   const [tempDesignNo, setTempDesignNo] = useState('');
@@ -189,11 +188,7 @@ export default function OrderNoPage({ navigation }) {
   };
 
   const handleUpdateOrder = async () => {
-    // Validation
-    if (!selectedCategory) {
-      Alert.alert('Error', 'Please select Color Saree, White Saree, or Garments');
-      return;
-    }
+    // Validation (category removed)
     if (!partyName.trim()) {
       Alert.alert('Error', 'Please enter party name');
       return;
@@ -234,7 +229,6 @@ export default function OrderNoPage({ navigation }) {
     try {
       const orderData = {
         poNo: editingOrder.poNo, // Preserve existing P.O. NO
-        category: selectedCategory,
         partyName: partyName.trim(),
         orderDate: selectedDate,
         designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
@@ -309,38 +303,12 @@ export default function OrderNoPage({ navigation }) {
     setShowInsertModal(true);
   };
 
-  const handleSelectSaree = (order) => {
-    setSelectedOrderForSaree(order);
-    setShowSelectSaree(true);
-  };
+  // Removed open SelectSaree from Order list
 
-  const handleSendToPartyOrder = (order) => {
-    if (!order) return;
-    const base = {
-      partyName: order.partyName,
-      poNo: order.poNo,
-      orderDate: order.orderDate,
-      companyId: order.companyId,
-    };
-    const items = Array.isArray(order.designNos) && order.designNos.length > 0
-      ? order.designNos.map((dn, idx) => ({
-          ...base,
-          designNo: String(dn || ''),
-          designQty: String(order.designQtys?.[idx] || ''),
-          matchingNo: String(order.matchingNos?.[idx] || ''),
-        }))
-      : [{ ...base, designNo: String(order.designNo || ''), designQty: String(order.quantity ?? ''), matchingNo: '' }];
-
-    setPartyOrderItems(items);
-    setShowColorPartyOrder(true);
-  };
+  // Removed send-to-party-order flow per request
 
   const handleInsertOrder = async () => {
-    // Validation
-    if (!selectedCategory) {
-      Alert.alert('Error', 'Please select Color Saree, White Saree, or Garments');
-      return;
-    }
+    // Validation (category removed)
     if (!partyName.trim()) {
       Alert.alert('Error', 'Please enter party name');
       return;
@@ -386,7 +354,6 @@ export default function OrderNoPage({ navigation }) {
       // Create order data object
       const orderData = {
         poNo: nextPoNo, // Auto-generated P.O. NO
-        category: selectedCategory,
         partyName: partyName.trim(),
         orderDate: selectedDate,
         designNo: (designNos.find(n => (n || '').trim()) || '').trim(),
@@ -402,23 +369,16 @@ export default function OrderNoPage({ navigation }) {
       
       console.log('Order saved with ID: ', docRef.id);
       
-      Alert.alert('Success', 'Order added successfully!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Reset form
-            setPartyName('');
-            setSelectedDate('');
-            setQuantity('');
-            setDesignNos(['']);
-            setDesignQtys(['']);
-            setMatchingNos(['']);
-    setShowInsertModal(false);
-            // Refresh orders list
-            loadOrders();
-          }
-        }
-      ]);
+      // Close modal and refresh list without popup
+      setShowInsertModal(false);
+      // Reset form and refresh list
+      setPartyName('');
+      setSelectedDate('');
+      setQuantity('');
+      setDesignNos(['']);
+      setDesignQtys(['']);
+      setMatchingNos(['']);
+      loadOrders();
       
     } catch (error) {
       console.error('Error saving order: ', error);
@@ -428,30 +388,10 @@ export default function OrderNoPage({ navigation }) {
     }
   };
 
-  // If SelectSaree page is shown, render it
-  if (showSelectSaree) {
-    return (
-      <SelectSaree 
-        navigation={{
-          goBack: () => setShowSelectSaree(false)
-        }}
-        orderData={selectedOrderForSaree}
-        allowedType={(selectedOrderForSaree?.category === 'Color Saree') ? 'color' : (selectedOrderForSaree?.category === 'White Saree') ? 'white' : (selectedOrderForSaree?.category === 'Garments') ? 'garment' : undefined}
-      />
-    );
-  }
+  // Removed SelectSaree rendering from OrderNoPage
 
   // Direct flow to Color Saree -> Party Order with split designs
-  if (showColorPartyOrder) {
-    return (
-      <ColorSareePartyOrder
-        navigation={{
-          goBack: () => setShowColorPartyOrder(false)
-        }}
-        orderDataList={partyOrderItems}
-      />
-    );
-  }
+  // Removed direct flow to Color Saree Party Order per request
 
   return (
     <View style={styles.container}>
@@ -505,7 +445,7 @@ export default function OrderNoPage({ navigation }) {
                 <TouchableOpacity 
                   key={order.id} 
                   style={styles.tableRow}
-                  onPress={() => handleSelectSaree(order)}
+                  onPress={() => handleViewOrder(order)}
                 >
                   <Text style={styles.cell}>{order.poNo}</Text>
                   <Text style={styles.cell}>{order.partyName}</Text>
@@ -591,24 +531,7 @@ export default function OrderNoPage({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Category Segmented Buttons (moved below Select Date) */}
-              <View style={styles.segmentContainer}>
-                {['Color Saree','White Saree','Garments'].map((label) => {
-                  const isActive = selectedCategory === label;
-                  return (
-                    <TouchableOpacity
-                      key={label}
-                      style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
-                      onPress={() => setSelectedCategory(label)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              {/* Category selection removed per request */}
 
               {/* Design No Inputs with Add button */}
               <View style={styles.inputContainer}>
@@ -863,12 +786,9 @@ export default function OrderNoPage({ navigation }) {
               <TouchableOpacity
                 style={[styles.sendButton, styles.sendButtonSmall]}
                 activeOpacity={0.8}
-                onPress={() => {
-                  handleSendToPartyOrder(selectedOrder);
-                  setShowPreviewModal(false);
-                }}
+                onPress={() => setShowPreviewModal(false)}
               >
-                <Text style={styles.sendButtonText}>Send</Text>
+                <Text style={styles.sendButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -925,24 +845,7 @@ export default function OrderNoPage({ navigation }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Category Segmented Buttons (Edit - moved below Select Date) */}
-              <View style={styles.segmentContainer}>
-                {['Color Saree','White Saree','Garments'].map((label) => {
-                  const isActive = selectedCategory === label;
-                  return (
-                    <TouchableOpacity
-                      key={label}
-                      style={[styles.segmentButton, isActive && styles.segmentButtonActive]}
-                      onPress={() => setSelectedCategory(label)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              {/* Category selection removed in Edit modal */}
 
               
 

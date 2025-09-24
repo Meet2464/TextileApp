@@ -74,8 +74,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleReport = () => {
-    // TODO: Implement report functionality
-    Alert.alert('Report', 'Report functionality will be implemented');
+    Alert.alert('Reports', 'Reports coming soon');
   };
 
   const handleProfileClick = () => {
