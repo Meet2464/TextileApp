@@ -72,19 +72,26 @@ export default function ChalanNoPage({ navigation }) {
   if (showPartyOrder) {
     return (
       <View style={styles.container}>
-      <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
-              setShowSendModal(false);
-              setShowPartyOrder(false);
-            }}
-          >
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
             <Icon name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Party Order</Text>
           <View style={styles.placeholder} />
         </View>
+
+        <View style={styles.content} />
+
+        {/* Bottom two-button panel */}
+        <View style={styles.bottomPanel}>
+          <TouchableOpacity style={styles.pillButton}>
+            <Text style={styles.pillText}>Pending data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillButton}>
+            <Text style={styles.pillText}>done data</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.content}>
           <View style={{ paddingHorizontal: 10 }}>
             <View style={styles.poTableHeader}>
@@ -117,6 +124,111 @@ export default function ChalanNoPage({ navigation }) {
             ))}
           </View>
         </View>
+        {/* Send to Jecard Modal (rendered within Party Order branch so it is available) */}
+        <Modal
+          visible={showSendModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowSendModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Send to Jecard</Text>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+                  <Text style={styles.closeButtonText}>×</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ paddingHorizontal: 10 }}>
+                {/* Category Tabs */}
+                <View style={styles.segmentContainer}>
+                  {[
+                    { id: 'color', label: 'Color Saree' },
+                    { id: 'white', label: 'White Saree' },
+                    { id: 'garment', label: 'Garments' },
+                  ].map((tab) => (
+                    <TouchableOpacity
+                      key={tab.id}
+                      style={[styles.segmentButton, sendCategory === tab.id && styles.segmentButtonActive]}
+                      onPress={() => setSendCategory(tab.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.segmentText, sendCategory === tab.id && styles.segmentTextActive]}>{tab.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Content area */}
+                {sendCategory === 'garment' ? (
+                  <View style={{ marginTop: 16 }}>
+                    <Text style={styles.inputLabel}>Mtr</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      keyboardType="numeric"
+                      value={sendMtr}
+                      onChangeText={setSendMtr}
+                      placeholder="0"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                ) : (
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={styles.inputLabel}>Piece/Mtr</Text>
+                    <View style={styles.toggleRow}>
+                      <TouchableOpacity
+                        style={[styles.toggleBtn, withBlouse && styles.toggleBtnActive]}
+                        onPress={() => setWithBlouse(true)}
+                      >
+                        <Text style={[styles.toggleText, withBlouse && styles.toggleTextActive]}>With blouse</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.toggleBtn, !withBlouse && styles.toggleBtnActive]}
+                        onPress={() => setWithBlouse(false)}
+                      >
+                        <Text style={[styles.toggleText, !withBlouse && styles.toggleTextActive]}>Without blouse</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 14 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.inputLabel}>Piece</Text>
+                        <TextInput
+                          style={styles.textInput}
+                          keyboardType="numeric"
+                          value={sendPiece}
+                          onChangeText={setSendPiece}
+                          placeholder="0"
+                          placeholderTextColor="#999"
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.inputLabel}>Mtr</Text>
+                        <TextInput
+                          style={styles.textInput}
+                          keyboardType="numeric"
+                          value={sendMtr}
+                          onChangeText={setSendMtr}
+                          placeholder="0"
+                          placeholderTextColor="#999"
+                        />
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.sendButton, { marginTop: 22 }]}
+                  onPress={() => setShowSendModal(false)}
+                  activeOpacity={0.9}
+                >
+                  <Text style={styles.sendButtonText}>Send</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     );
   }
