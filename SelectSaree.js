@@ -8,7 +8,19 @@ import {
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-// Removed page imports (Color/White/Garment) per request
+import ColorSareeJecard from './pages/ColorSaree/ColorSareeJecard';
+import ColorSareeButtaCutting from './pages/ColorSaree/ColorSareeButtaCutting';
+import ColorSareeBleach from './pages/ColorSaree/ColorSareeBleach';
+import ColorSareeCotting from './pages/ColorSaree/ColorSareeCotting';
+import ColorSareePositionPrint from './pages/ColorSaree/ColorSareePositionPrint';
+import ColorSareeFinish from './pages/ColorSaree/ColorSareeFinish';
+import ColorSareeChecking from './pages/ColorSaree/ColorSareeChecking';
+import ColorSareeDelivery from './pages/ColorSaree/ColorSareeDelivery';
+import WhiteSareeJecard from './pages/WhiteSaree/WhiteSareeJecard';
+import WhiteSareeButtaCutting from './pages/WhiteSaree/WhiteSareeButtaCutting';
+import WhiteSareeBleach from './pages/WhiteSaree/WhiteSareeBleach';
+import WhiteSareeFinish from './pages/WhiteSaree/WhiteSareeFinish';
+import WhiteSareeDelivery from './pages/WhiteSaree/WhiteSareeDelivery';
 
 const { width, height } = Dimensions.get('window');
 
@@ -133,6 +145,48 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
   };
   // (Party Order removed from here; accessible from Chalan page)
 
+  // White Saree pages
+  if (showWhiteJecard) {
+    return (
+      <WhiteSareeJecard
+        navigation={{ goBack: () => setShowWhiteJecard(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showWhiteButtaCutting) {
+    return (
+      <WhiteSareeButtaCutting
+        navigation={{ goBack: () => setShowWhiteButtaCutting(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showWhiteBleach) {
+    return (
+      <WhiteSareeBleach
+        navigation={{ goBack: () => setShowWhiteBleach(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showWhiteFinish) {
+    return (
+      <WhiteSareeFinish
+        navigation={{ goBack: () => setShowWhiteFinish(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showWhiteDelivery) {
+    return (
+      <WhiteSareeDelivery
+        navigation={{ goBack: () => setShowWhiteDelivery(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+
   const whiteSareeButtons = [
     {
       id: 'jecard',
@@ -254,7 +308,71 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
     return colorSareeButtons;
   };
 
-  // All process pages removed; keep only the grid and selection
+  // Color Saree pages
+  if (showColorJecard) {
+    return (
+      <ColorSareeJecard
+        navigation={{ goBack: () => setShowColorJecard(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorButtaCutting) {
+    return (
+      <ColorSareeButtaCutting
+        navigation={{ goBack: () => setShowColorButtaCutting(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorBleach) {
+    return (
+      <ColorSareeBleach
+        navigation={{ goBack: () => setShowColorBleach(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorCotting) {
+    return (
+      <ColorSareeCotting
+        navigation={{ goBack: () => setShowColorCotting(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorPositionPrint) {
+    return (
+      <ColorSareePositionPrint
+        navigation={{ goBack: () => setShowColorPositionPrint(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorFinish) {
+    return (
+      <ColorSareeFinish
+        navigation={{ goBack: () => setShowColorFinish(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorChecking) {
+    return (
+      <ColorSareeChecking
+        navigation={{ goBack: () => setShowColorChecking(false) }}
+        orderData={orderData}
+      />
+    );
+  }
+  if (showColorDelivery) {
+    return (
+      <ColorSareeDelivery
+        navigation={{ goBack: () => setShowColorDelivery(false) }}
+        orderData={orderData}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>

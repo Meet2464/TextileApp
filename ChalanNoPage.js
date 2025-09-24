@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Dimensions,
   Modal,
+  TextInput,
 } from 'react-native';
 import SelectSaree from './SelectSaree';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
@@ -17,6 +19,34 @@ export default function ChalanNoPage({ navigation }) {
   const [showSelect, setShowSelect] = useState(false);
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
+  const [partyRows, setPartyRows] = useState([]);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendCategory, setSendCategory] = useState('color'); // 'color' | 'white' | 'garment'
+  const [withBlouse, setWithBlouse] = useState(true);
+  const [sendPiece, setSendPiece] = useState('');
+  const [sendMtr, setSendMtr] = useState('');
+  // Simple close handling for Send modal
+
+  // Auto-calculate Mtr based on Piece and blouse selection for Color/White
+  useEffect(() => {
+    if (sendCategory === 'garment') return; // garments enter mtr manually
+    const pieces = parseInt((sendPiece || '').trim() === '' ? '0' : sendPiece, 10) || 0;
+    const factor = withBlouse ? 7 : 6;
+    setSendMtr(String(pieces * factor));
+  }, [sendPiece, withBlouse, sendCategory]);
+
+  useEffect(() => {
+    if (showPartyOrder) {
+      (async () => {
+        try {
+          const raw = await AsyncStorage.getItem('party_order_rows');
+          setPartyRows(raw ? JSON.parse(raw) : []);
+        } catch {
+          setPartyRows([]);
+        }
+      })();
+    }
+  }, [showPartyOrder]);
 
   const handleInsertClick = () => {
     setShowInsertModal(true);
@@ -38,17 +68,29 @@ export default function ChalanNoPage({ navigation }) {
     );
   }
 
-  // Empty Party Order page (no details inside as requested)
+  // Party Order summary page (reads rows saved from Order page)
   if (showPartyOrder) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
+<<<<<<< HEAD
           <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
             <Icon name="arrow-back" size={24} color="#FFFFFF" />
+=======
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              setShowSendModal(false);
+              setShowPartyOrder(false);
+            }}
+          >
+            <Icon name="arrow-back" size={24} color="#000" />
+>>>>>>> d3072df46fbd34e10bde12cd7470af1feabbdc2d
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Party Order</Text>
           <View style={styles.placeholder} />
         </View>
+<<<<<<< HEAD
         <View style={styles.content} />
 
         {/* Bottom two-button panel */}
@@ -60,6 +102,144 @@ export default function ChalanNoPage({ navigation }) {
             <Text style={styles.pillText}>done data</Text>
           </TouchableOpacity>
         </View>
+=======
+        <View style={styles.content}>
+          <View style={{ paddingHorizontal: 10 }}>
+            <View style={styles.poTableHeader}>
+              <Text style={styles.poHeaderCell}>P.O.NO</Text>
+              <Text style={styles.poHeaderCell}>PARTY NAME</Text>
+              <Text style={styles.poHeaderCell}>D.NO</Text>
+              <Text style={styles.poHeaderCell}>QTY</Text>
+              <Text style={styles.poHeaderCell}>SEND</Text>
+            </View>
+            {partyRows.map((row, idx) => (
+              <View key={`prow-${idx}`} style={styles.poTableRow}>
+                <Text style={styles.poCell}>{String(row.poNo)}</Text>
+                <Text style={styles.poCell}>{String(row.partyName)}</Text>
+                <Text style={styles.poCell}>{String(row.designNo)}</Text>
+                <Text style={styles.poCell}>{String(row.qty)}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setShowSendModal(true);
+                    setSendCategory('color');
+                    setWithBlouse(true);
+                    setSendPiece('');
+                    setSendMtr('');
+                  }}
+                  style={{ flex: 1, alignItems: 'center' }}
+                >
+                  <Text style={[styles.poCell, { color: '#00BFFF', fontWeight: '700' }]}>SEND</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </View>
+        {/* Send to Jecard Modal (rendered within Party Order branch so it is available) */}
+        <Modal
+          visible={showSendModal}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setShowSendModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Send to Jecard</Text>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+                  <Text style={styles.closeButtonText}>×</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={{ paddingHorizontal: 10 }}>
+                {/* Category Tabs */}
+                <View style={styles.segmentContainer}>
+                  {[
+                    { id: 'color', label: 'Color Saree' },
+                    { id: 'white', label: 'White Saree' },
+                    { id: 'garment', label: 'Garments' },
+                  ].map((tab) => (
+                    <TouchableOpacity
+                      key={tab.id}
+                      style={[styles.segmentButton, sendCategory === tab.id && styles.segmentButtonActive]}
+                      onPress={() => setSendCategory(tab.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.segmentText, sendCategory === tab.id && styles.segmentTextActive]}>{tab.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Content area */}
+                {sendCategory === 'garment' ? (
+                  <View style={{ marginTop: 16 }}>
+                    <Text style={styles.inputLabel}>Mtr</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      keyboardType="numeric"
+                      value={sendMtr}
+                      onChangeText={setSendMtr}
+                      placeholder="0"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                ) : (
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={styles.inputLabel}>Piece/Mtr</Text>
+                    <View style={styles.toggleRow}>
+                      <TouchableOpacity
+                        style={[styles.toggleBtn, withBlouse && styles.toggleBtnActive]}
+                        onPress={() => setWithBlouse(true)}
+                      >
+                        <Text style={[styles.toggleText, withBlouse && styles.toggleTextActive]}>With blouse</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.toggleBtn, !withBlouse && styles.toggleBtnActive]}
+                        onPress={() => setWithBlouse(false)}
+                      >
+                        <Text style={[styles.toggleText, !withBlouse && styles.toggleTextActive]}>Without blouse</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 14 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.inputLabel}>Piece</Text>
+                        <TextInput
+                          style={styles.textInput}
+                          keyboardType="numeric"
+                          value={sendPiece}
+                          onChangeText={setSendPiece}
+                          placeholder="0"
+                          placeholderTextColor="#999"
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.inputLabel}>Mtr</Text>
+                        <TextInput
+                          style={styles.textInput}
+                          keyboardType="numeric"
+                          value={sendMtr}
+                          onChangeText={setSendMtr}
+                          placeholder="0"
+                          placeholderTextColor="#999"
+                        />
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.sendButton, { marginTop: 22 }]}
+                  onPress={() => setShowSendModal(false)}
+                  activeOpacity={0.9}
+                >
+                  <Text style={styles.sendButtonText}>Send</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+>>>>>>> d3072df46fbd34e10bde12cd7470af1feabbdc2d
       </View>
     );
   }
@@ -134,6 +314,123 @@ export default function ChalanNoPage({ navigation }) {
               
               <TouchableOpacity style={styles.insertChalanButton} onPress={handleInsertChalan}>
                 <Text style={styles.insertChalanButtonText}>Insert Chalan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Send to Jecard Modal */}
+      <Modal
+        visible={showSendModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowSendModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Send to Jecard</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ paddingHorizontal: 10 }}>
+              {/* Category Tabs */}
+              <View style={styles.segmentContainer}>
+                {[
+                  { id: 'color', label: 'Color Saree' },
+                  { id: 'white', label: 'White Saree' },
+                  { id: 'garment', label: 'Garments' },
+                ].map((tab) => (
+                  <TouchableOpacity
+                    key={tab.id}
+                    style={[styles.segmentButton, sendCategory === tab.id && styles.segmentButtonActive]}
+                    onPress={() => setSendCategory(tab.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.segmentText, sendCategory === tab.id && styles.segmentTextActive]}>{tab.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Content area */}
+              {sendCategory === 'garment' ? (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={styles.inputLabel}>Mtr</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    keyboardType="numeric"
+                    value={sendMtr}
+                    onChangeText={setSendMtr}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              ) : (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={styles.inputLabel}>Piece/Mtr</Text>
+                  <View style={styles.toggleRow}>
+                    <TouchableOpacity
+                      style={[styles.toggleBtn, withBlouse && styles.toggleBtnActive]}
+                      onPress={() => setWithBlouse(true)}
+                    >
+                      <Text style={[styles.toggleText, withBlouse && styles.toggleTextActive]}>With blouse</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.toggleBtn, !withBlouse && styles.toggleBtnActive]}
+                      onPress={() => setWithBlouse(false)}
+                    >
+                      <Text style={[styles.toggleText, !withBlouse && styles.toggleTextActive]}>Without blouse</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', gap: 12, marginTop: 14 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.inputLabel}>Piece</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        keyboardType="numeric"
+                        value={sendPiece}
+                        onChangeText={setSendPiece}
+                        onFocus={() => {
+                          if (sendPiece === '0') setSendPiece('');
+                        }}
+                        onBlur={() => {
+                          if ((sendPiece || '').trim() === '') setSendPiece('0');
+                        }}
+                        placeholder="0"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.inputLabel}>Mtr</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        keyboardType="numeric"
+                        value={sendMtr}
+                        onChangeText={setSendMtr}
+                        onFocus={() => {
+                          if (sendCategory === 'garment' && sendMtr === '0') setSendMtr('');
+                        }}
+                        onBlur={() => {
+                          if (sendCategory === 'garment' && (sendMtr || '').trim() === '') setSendMtr('0');
+                        }}
+                        placeholder="0"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[styles.sendButton, { marginTop: 22 }]}
+                onPress={() => setShowSendModal(false)}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.sendButtonText}>Send</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -264,8 +561,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    width: width * 0.8,
+    backgroundColor: '#2A2A2A',
+    width: width * 0.9,
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -282,26 +579,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    paddingBottom: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#444',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   closeButton: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#3A3A3A',
     justifyContent: 'center',
     alignItems: 'center',
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#666',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   modalBody: {
@@ -351,5 +648,131 @@ const styles = StyleSheet.create({
   categoryButtonsWrap: {
     alignItems: 'center',
     marginTop: 6,
+  },
+  poTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  poHeaderCell: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#00BFFF',
+    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  poTableRow: {
+    flexDirection: 'row',
+    backgroundColor: '#3A3A3A',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  poCell: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  // Popup UI styles
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1F1F1F',
+    borderRadius: 12,
+    padding: 4,
+    gap: 6,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2E2E2E',
+    borderWidth: 1,
+    borderColor: '#444444',
+  },
+  segmentButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#1e90ff',
+  },
+  segmentText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '700',
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  segmentTextActive: {
+    color: '#FFFFFF',
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  textInput: {
+    borderWidth: 2,
+    borderColor: '#555555',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#3A3A3A',
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  toggleBtn: {
+    flex: 1,
+    backgroundColor: '#2E2E2E',
+    borderWidth: 2,
+    borderColor: '#3A3A3A',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  toggleBtnActive: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderColor: '#10B981',
+  },
+  toggleText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '700',
+  },
+  toggleTextActive: {
+    color: '#10B981',
+  },
+  sendButton: {
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: '#ff5722',
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
