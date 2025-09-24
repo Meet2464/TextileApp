@@ -15,6 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { db } from './firebase';
 import { useUser } from './contexts/UserContext';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // SelectSaree is now accessible only via Reports
 // Removed Color/White/Garment page imports per request
 
@@ -42,6 +43,8 @@ export default function OrderNoPage({ navigation }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [showPartyOrderTable, setShowPartyOrderTable] = useState(false);
+  const [partyOrderRows, setPartyOrderRows] = useState([]);
   // Removed inline SelectSaree view state
   const [selectedOrderForSaree, setSelectedOrderForSaree] = useState(null);
   // Removed state for Color/White/Garment pages per request
@@ -369,8 +372,30 @@ export default function OrderNoPage({ navigation }) {
       
       console.log('Order saved with ID: ', docRef.id);
       
-      // Close modal and refresh list without popup
+      // Build Party Order rows (one per design line)
+      const rows = (Array.isArray(designNos) && designNos.length > 0
+        ? designNos.map((dn, idx) => ({
+            poNo: nextPoNo,
+            partyName: partyName.trim(),
+            orderDate: selectedDate,
+            designNo: String(dn || ''),
+            qty: String(designQtys?.[idx] || ''),
+          }))
+        : [{
+            poNo: nextPoNo,
+            partyName: partyName.trim(),
+            orderDate: selectedDate,
+            designNo: String((designNos?.[0] || '').trim()),
+            qty: String(quantity || ''),
+          }]);
+
+      const cleanRows = rows.filter(r => (r.designNo || '').trim() !== '');
+      setPartyOrderRows(cleanRows);
+      // Persist rows for Chalan → Party Order page
+      try { await AsyncStorage.setItem('party_order_rows', JSON.stringify(cleanRows)); } catch {}
       setShowInsertModal(false);
+      // Optional: could navigate user to Chalan page manually; staying here as requested earlier
+
       // Reset form and refresh list
       setPartyName('');
       setSelectedDate('');
@@ -583,6 +608,51 @@ export default function OrderNoPage({ navigation }) {
                   <Text style={styles.sendButtonText}>Send</Text>
                 )}
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Party Order Table (simple) */}
+      <Modal
+        visible={showPartyOrderTable}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowPartyOrderTable(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Party Order</Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowPartyOrderTable(false)}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ paddingHorizontal: 4 }}>
+              <View style={styles.tableHeader}>
+                <Text style={styles.headerCell}>P.O.NO</Text>
+                <Text style={styles.headerCell}>PARTY NAME</Text>
+                <Text style={styles.headerCell}>P.O.DATE</Text>
+                <Text style={styles.headerCell}>D.NO</Text>
+                <Text style={styles.headerCell}>QTY</Text>
+                <Text style={styles.headerCell}>SEND</Text>
+              </View>
+              {partyOrderRows.map((row, idx) => (
+                <View key={idx} style={styles.tableRow}>
+                  <Text style={styles.cell}>{String(row.poNo)}</Text>
+                  <Text style={styles.cell}>{String(row.partyName)}</Text>
+                  <Text style={styles.cell}>{String(row.orderDate)}</Text>
+                  <Text style={styles.cell}>{String(row.designNo)}</Text>
+                  <Text style={styles.cell}>{String(row.qty)}</Text>
+                  <TouchableOpacity activeOpacity={0.7}>
+                    <Text style={[styles.cell, { color: '#00BFFF', fontWeight: '700' }]}>SEND</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
           </View>
         </View>
