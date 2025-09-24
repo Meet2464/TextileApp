@@ -437,7 +437,7 @@ export default function OrderNoPage({ navigation }) {
                 <Text style={styles.headerCell}>P.O. NO</Text>
                 <Text style={styles.headerCell}>PARTY NAME</Text>
                 <Text style={styles.headerCell}>P.O. DATE</Text>
-                <Text style={styles.headerCell}>VIEW</Text>
+                <Text style={styles.headerCell}>SEND</Text>
               </View>
               
               {/* Table Rows */}
@@ -456,7 +456,7 @@ export default function OrderNoPage({ navigation }) {
                     activeOpacity={0.7}
                   >
                     <View style={styles.viewButtonInner}>
-                      <Text style={styles.viewButtonText}>VIEW</Text>
+                      <Text style={styles.viewButtonText}>SEND</Text>
                     </View>
                   </TouchableOpacity>
                 </TouchableOpacity>
@@ -726,36 +726,22 @@ export default function OrderNoPage({ navigation }) {
 
                 {/* Line Items Table */}
                 <View style={styles.detailTableContainer}>
-                  <View style={styles.detailTableHeader}>
-                    <Text style={[styles.detailHeaderCell, { flex: 1.2 }]}>Design No</Text>
-                    <Text style={[styles.detailHeaderCell, { flex: 0.8 }]}>Qty</Text>
-                    <Text style={[styles.detailHeaderCell, { flex: 1.2 }]}>Matching No</Text>
-                  </View>
+                <View style={styles.detailTableHeader}>
+                  <Text style={[styles.detailHeaderCell, { flex: 1.5 }]}>Design No</Text>
+                  <Text style={[styles.detailHeaderCell, { flex: 1 }]}>Qty</Text>
+                </View>
 
                   {Array.isArray(selectedOrder.designNos) && selectedOrder.designNos.length > 0 ? (
                     selectedOrder.designNos.map((dn, idx) => (
                       <View key={`line-${idx}`} style={styles.detailTableRow}>
-                        <Text style={[styles.detailCell, { flex: 1.2 }]}>{String(dn || '')}</Text>
-                        <Text style={[styles.detailCell, { flex: 0.8 }]}>{String(selectedOrder.designQtys?.[idx] || '')}</Text>
-                        <View style={{ flex: 1.2 }}>
-                          <View style={styles.matchListRow}>
-                            {String(selectedOrder.matchingNos?.[idx] || '')
-                              .split(',')
-                              .filter(Boolean)
-                              .map((code) => (
-                                <View key={code} style={styles.matchPill}>
-                                  <Text style={styles.matchPillText}>{code.trim()}</Text>
-                                </View>
-                              ))}
-                          </View>
-                        </View>
+                        <Text style={[styles.detailCell, { flex: 1.5 }]}>{String(dn || '')}</Text>
+                        <Text style={[styles.detailCell, { flex: 1 }]}>{String(selectedOrder.designQtys?.[idx] || '')}</Text>
                       </View>
                     ))
                   ) : (
                     <View style={styles.detailTableRow}>
-                      <Text style={[styles.detailCell, { flex: 1.2 }]}>{String(selectedOrder.designNo || '-')}</Text>
-                      <Text style={[styles.detailCell, { flex: 0.8 }]}>{String(selectedOrder.quantity ?? '-')}</Text>
-                      <View style={{ flex: 1.2 }} />
+                      <Text style={[styles.detailCell, { flex: 1.5 }]}>{String(selectedOrder.designNo || '-')}</Text>
+                      <Text style={[styles.detailCell, { flex: 1 }]}>{String(selectedOrder.quantity ?? '-')}</Text>
                     </View>
                   )}
                 </View>
@@ -975,30 +961,7 @@ export default function OrderNoPage({ navigation }) {
                   placeholderTextColor="#999"
                 />
               </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Matching No (optional)</Text>
-                <View style={styles.matchGrid}>
-                  {[...Array(20)].map((_, i) => {
-                    const code = `M${String(i + 1).padStart(2, '0')}`;
-                    const active = tempMatchingSet.includes(code);
-                    return (
-                      <TouchableOpacity
-                        key={code}
-                        style={[styles.matchChipLight, active && styles.matchChipActive]}
-                        onPress={() => {
-                          setTempMatchingSet((prev) => {
-                            const has = prev.includes(code);
-                            if (has) return prev.filter((x) => x !== code);
-                            return [...prev, code];
-                          });
-                        }}
-                      >
-                        <Text style={[styles.matchChipLightText, active && styles.matchChipTextActive]}>{code}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
+              {/* Matching No section removed per request */}
               <TouchableOpacity
                 style={styles.sendButton}
                 onPress={() => {
@@ -1012,7 +975,7 @@ export default function OrderNoPage({ navigation }) {
                   const nextMatch = [...matchingNos];
                   nextNos[idx] = (tempDesignNo || '').trim();
                   nextQtys[idx] = String(tempDesignQty).trim();
-                  nextMatch[idx] = tempMatchingSet.join(',');
+                  // Preserve existing matching numbers without editing in this modal
                   setDesignNos(nextNos);
                   setDesignQtys(nextQtys);
                   setMatchingNos(nextMatch);
@@ -1546,6 +1509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     marginBottom: 8,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1568,7 +1532,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'center',
-    paddingVertical: 2,
+    paddingVertical: 0,
   },
   viewButtonInner: {
     backgroundColor: '#2A2A2A',

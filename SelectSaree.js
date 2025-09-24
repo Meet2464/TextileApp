@@ -230,9 +230,23 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
     },
   ];
 
-  const garmentButtons = colorSareeButtons.map(btn =>
-    btn.id === 'jecard' ? { ...btn, title: 'EMBROIDERY' } : btn
-  );
+  // Garment flow: Cotting, Embroidery, Position Print, Finish, Checking, Delivery
+  const garmentButtons = [
+    // Cotting
+    ...colorSareeButtons.filter(btn => btn.id === 'cotting'),
+    // Embroidery (renamed from Jecard)
+    ...colorSareeButtons
+      .filter(btn => btn.id === 'jecard')
+      .map(btn => ({ ...btn, title: 'EMBROIDERY' })),
+    // Position Print
+    ...colorSareeButtons.filter(btn => btn.id === 'position-print'),
+    // Finish
+    ...colorSareeButtons.filter(btn => btn.id === 'finish'),
+    // Checking
+    ...colorSareeButtons.filter(btn => btn.id === 'checking'),
+    // Delivery
+    ...colorSareeButtons.filter(btn => btn.id === 'delivery'),
+  ];
 
   const getCurrentButtons = () => {
     if (selectedSareeType === 'white') return whiteSareeButtons;
