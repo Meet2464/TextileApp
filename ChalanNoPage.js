@@ -73,6 +73,7 @@ export default function ChalanNoPage({ navigation }) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
+<<<<<<< HEAD
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
@@ -81,10 +82,15 @@ export default function ChalanNoPage({ navigation }) {
             }}
           >
             <Icon name="arrow-back" size={24} color="#000" />
+=======
+          <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
+            <Icon name="arrow-back" size={24} color="#FFFFFF" />
+>>>>>>> 7e1d040b41e4254880b75bf12b65ba092fb9c3eb
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Party Order</Text>
           <View style={styles.placeholder} />
         </View>
+<<<<<<< HEAD
         <View style={styles.content}>
           <View style={{ paddingHorizontal: 10 }}>
             <View style={styles.poTableHeader}>
@@ -221,6 +227,19 @@ export default function ChalanNoPage({ navigation }) {
             </View>
           </View>
         </Modal>
+=======
+        <View style={styles.content} />
+
+        {/* Bottom two-button panel */}
+        <View style={styles.bottomPanel}>
+          <TouchableOpacity style={styles.pillButton}>
+            <Text style={styles.pillText}>Pending data</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillButton}>
+            <Text style={styles.pillText}>done data</Text>
+          </TouchableOpacity>
+        </View>
+>>>>>>> 7e1d040b41e4254880b75bf12b65ba092fb9c3eb
       </View>
     );
   }
@@ -233,7 +252,7 @@ export default function ChalanNoPage({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation?.goBack()}
         >
-          <Icon name="arrow-back" size={24} color="#000" />
+          <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chalan No</Text>
         <View style={styles.placeholder} />
@@ -484,6 +503,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  bottomPanel: {
+    flexDirection: 'row',
+    backgroundColor: '#2C2C2E',
+    borderRadius: 30,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    gap: 12,
+  },
+  pillButton: {
+    flex: 1,
+    backgroundColor: '#3A3A3A',
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  pillText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    textTransform: 'none',
   },
   insertButton: {
     backgroundColor: '#007AFF',
