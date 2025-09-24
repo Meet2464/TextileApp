@@ -73,7 +73,6 @@ export default function ChalanNoPage({ navigation }) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-<<<<<<< HEAD
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
@@ -81,18 +80,11 @@ export default function ChalanNoPage({ navigation }) {
               setShowPartyOrder(false);
             }}
           >
-=======
-          <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
->>>>>>> 5e79eabe7801d95e9ea4494c469299ee07535972
             <Icon name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Party Order</Text>
           <View style={styles.placeholder} />
         </View>
-<<<<<<< HEAD
-=======
-
->>>>>>> 5e79eabe7801d95e9ea4494c469299ee07535972
         <View style={styles.content}>
           <View style={{ flex: 1 }}>
             <View style={{ paddingHorizontal: 10 }}>
@@ -241,10 +233,6 @@ export default function ChalanNoPage({ navigation }) {
             </View>
           </View>
         </Modal>
-<<<<<<< HEAD
-=======
-
->>>>>>> 5e79eabe7801d95e9ea4494c469299ee07535972
       </View>
     );
   }
