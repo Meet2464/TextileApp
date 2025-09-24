@@ -73,7 +73,6 @@ export default function ChalanNoPage({ navigation }) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-<<<<<<< HEAD
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
@@ -81,16 +80,11 @@ export default function ChalanNoPage({ navigation }) {
               setShowPartyOrder(false);
             }}
           >
-            <Icon name="arrow-back" size={24} color="#000" />
-=======
-          <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
             <Icon name="arrow-back" size={24} color="#FFFFFF" />
->>>>>>> 7e1d040b41e4254880b75bf12b65ba092fb9c3eb
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Party Order</Text>
           <View style={styles.placeholder} />
         </View>
-<<<<<<< HEAD
         <View style={styles.content}>
           <View style={{ paddingHorizontal: 10 }}>
             <View style={styles.poTableHeader}>
@@ -227,19 +221,6 @@ export default function ChalanNoPage({ navigation }) {
             </View>
           </View>
         </Modal>
-=======
-        <View style={styles.content} />
-
-        {/* Bottom two-button panel */}
-        <View style={styles.bottomPanel}>
-          <TouchableOpacity style={styles.pillButton}>
-            <Text style={styles.pillText}>Pending data</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pillButton}>
-            <Text style={styles.pillText}>done data</Text>
-          </TouchableOpacity>
-        </View>
->>>>>>> 7e1d040b41e4254880b75bf12b65ba092fb9c3eb
       </View>
     );
   }
