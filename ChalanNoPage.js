@@ -7,12 +7,16 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
+import SelectSaree from './SelectSaree';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
 export default function ChalanNoPage({ navigation }) {
   const [showInsertModal, setShowInsertModal] = useState(false);
+  const [showSelect, setShowSelect] = useState(false);
+  const [allowedType, setAllowedType] = useState(null);
+  const [showPartyOrder, setShowPartyOrder] = useState(false);
 
   const handleInsertClick = () => {
     setShowInsertModal(true);
@@ -23,6 +27,32 @@ export default function ChalanNoPage({ navigation }) {
     console.log('Insert chalan clicked');
     setShowInsertModal(false);
   };
+
+  // SelectSaree view locked to chosen category
+  if (showSelect) {
+    return (
+      <SelectSaree 
+        navigation={{ goBack: () => setShowSelect(false) }} 
+        allowedType={allowedType}
+      />
+    );
+  }
+
+  // Empty Party Order page (no details inside as requested)
+  if (showPartyOrder) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
+            <Icon name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Party Order</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.content} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -42,6 +72,22 @@ export default function ChalanNoPage({ navigation }) {
       <View style={styles.content}>
         <View style={styles.contentCard}>
           <Text style={styles.welcomeText}>Chalan No</Text>
+          {/* Party Order button above categories */}
+          <TouchableOpacity style={[styles.reportButton, { marginBottom: 18 }]} onPress={() => setShowPartyOrder(true)}>
+            <Icon name="people" size={20} color="#FFD700" />
+            <Text style={[styles.reportButtonText, { marginLeft: 8 }]}>PARTY ORDER</Text>
+          </TouchableOpacity>
+          <View style={styles.categoryButtonsWrap}>
+            <TouchableOpacity style={styles.reportButton} onPress={() => { setAllowedType('color'); setShowSelect(true); }}>
+              <Text style={styles.reportButtonText}>COLOR SAREE</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.reportButton} onPress={() => { setAllowedType('white'); setShowSelect(true); }}>
+              <Text style={styles.reportButtonText}>WHITE SAREE</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.reportButton} onPress={() => { setAllowedType('garment'); setShowSelect(true); }}>
+              <Text style={styles.reportButtonText}>GARMENTS</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -90,7 +136,7 @@ export default function ChalanNoPage({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#222222',
   },
   header: {
     flexDirection: 'row',
@@ -99,7 +145,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#222222',
   },
   backButton: {
     padding: 8,
@@ -107,14 +153,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#222222',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 20,
@@ -122,11 +168,13 @@ const styles = StyleSheet.create({
   },
   contentCard: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   welcomeText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFFFFF',
     textAlign: 'center',
     marginTop: 50,
   },
@@ -231,5 +279,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  reportButton: {
+    backgroundColor: '#3A3A3A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginVertical: 10,
+    width: (width - 70),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  reportButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  categoryButtonsWrap: {
+    alignItems: 'center',
+    marginTop: 6,
   },
 });
