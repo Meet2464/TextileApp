@@ -20,6 +20,7 @@ export default function ChalanNoPage({ navigation }) {
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
   const [partyRows, setPartyRows] = useState([]);
+  const [poActiveTab, setPoActiveTab] = useState('pending'); // 'pending' | 'done'
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendCategory, setSendCategory] = useState('color'); // 'color' | 'white' | 'garment'
   const [withBlouse, setWithBlouse] = useState(true);
@@ -87,44 +88,48 @@ export default function ChalanNoPage({ navigation }) {
         </View>
         <View style={styles.content}>
           <View style={{ flex: 1 }}>
-            <View style={{ paddingHorizontal: 10 }}>
-            <View style={styles.poTableHeader}>
-              <Text style={styles.poHeaderCell}>P.O.NO</Text>
-              <Text style={styles.poHeaderCell}>PARTY NAME</Text>
-              <Text style={styles.poHeaderCell}>D.NO</Text>
-              <Text style={styles.poHeaderCell}>QTY</Text>
-              <Text style={styles.poHeaderCell}>SEND</Text>
-            </View>
-            {partyRows.map((row, idx) => (
-              <View key={`prow-${idx}`} style={styles.poTableRow}>
-                <Text style={styles.poCell}>{String(row.poNo)}</Text>
-                <Text style={styles.poCell}>{String(row.partyName)}</Text>
-                <Text style={styles.poCell}>{String(row.designNo)}</Text>
-                <Text style={styles.poCell}>{String(row.qty)}</Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setShowSendModal(true);
-                    setSendCategory('color');
-                    setWithBlouse(true);
-                    setSendPiece('');
-                    setSendMtr('');
-                  }}
-                  style={{ flex: 1, alignItems: 'center' }}
-                >
-                  <Text style={[styles.poCell, { color: '#00BFFF', fontWeight: '700' }]}>SEND</Text>
-                </TouchableOpacity>
+            {poActiveTab === 'pending' ? (
+              <View style={{ paddingHorizontal: 10 }}>
+                <View style={styles.poTableHeader}>
+                  <Text style={styles.poHeaderCell}>P.O.NO</Text>
+                  <Text style={styles.poHeaderCell}>PARTY NAME</Text>
+                  <Text style={styles.poHeaderCell}>D.NO</Text>
+                  <Text style={styles.poHeaderCell}>QTY</Text>
+                  <Text style={styles.poHeaderCell}>SEND</Text>
+                </View>
+                {partyRows.map((row, idx) => (
+                  <View key={`prow-${idx}`} style={styles.poTableRow}>
+                    <Text style={styles.poCell}>{String(row.poNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.partyName)}</Text>
+                    <Text style={styles.poCell}>{String(row.designNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.qty)}</Text>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setShowSendModal(true);
+                        setSendCategory('color');
+                        setWithBlouse(true);
+                        setSendPiece('');
+                        setSendMtr('');
+                      }}
+                      style={{ flex: 1, alignItems: 'center' }}
+                    >
+                      <Text style={[styles.poCell, { color: '#00BFFF', fontWeight: '700' }]}>SEND</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
-            ))}
-            </View>
+            ) : (
+              <View style={{ paddingHorizontal: 10 }} />
+            )}
           </View>
 
           {/* Bottom two-button panel (sticky at bottom of Party Order) */}
           <View style={styles.bottomPanel}>
-            <TouchableOpacity style={styles.pillButton}>
+            <TouchableOpacity style={styles.pillButton} onPress={() => setPoActiveTab('pending')}>
               <Text style={styles.pillText}>Pending data</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.pillButton}>
+            <TouchableOpacity style={styles.pillButton} onPress={() => setPoActiveTab('done')}>
               <Text style={styles.pillText}>done data</Text>
             </TouchableOpacity>
           </View>

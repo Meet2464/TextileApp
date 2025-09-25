@@ -391,8 +391,13 @@ export default function OrderNoPage({ navigation }) {
 
       const cleanRows = rows.filter(r => (r.designNo || '').trim() !== '');
       setPartyOrderRows(cleanRows);
-      // Persist rows for Chalan → Party Order page
-      try { await AsyncStorage.setItem('party_order_rows', JSON.stringify(cleanRows)); } catch {}
+      // Persist rows for Chalan → Party Order page (append to existing pending list)
+      try {
+        const existingRaw = await AsyncStorage.getItem('party_order_rows');
+        const existing = existingRaw ? JSON.parse(existingRaw) : [];
+        const merged = Array.isArray(existing) ? [...existing, ...cleanRows] : [...cleanRows];
+        await AsyncStorage.setItem('party_order_rows', JSON.stringify(merged));
+      } catch {}
       setShowInsertModal(false);
       // Optional: could navigate user to Chalan page manually; staying here as requested earlier
 
