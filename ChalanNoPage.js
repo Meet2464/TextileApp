@@ -20,12 +20,14 @@ export default function ChalanNoPage({ navigation }) {
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
   const [partyRows, setPartyRows] = useState([]);
+  const [doneRows, setDoneRows] = useState([]);
   const [poActiveTab, setPoActiveTab] = useState('pending'); // 'pending' | 'done'
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendCategory, setSendCategory] = useState('color'); // 'color' | 'white' | 'garment'
   const [withBlouse, setWithBlouse] = useState(true);
   const [sendPiece, setSendPiece] = useState('');
   const [sendMtr, setSendMtr] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
   // Simple close handling for Send modal
 
   // Auto-calculate Mtr based on Piece and blouse selection for Color/White
@@ -42,8 +44,11 @@ export default function ChalanNoPage({ navigation }) {
         try {
           const raw = await AsyncStorage.getItem('party_order_rows');
           setPartyRows(raw ? JSON.parse(raw) : []);
+          const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
+          setDoneRows(doneRaw ? JSON.parse(doneRaw) : []);
         } catch {
           setPartyRows([]);
+          setDoneRows([]);
         }
       })();
     }
@@ -111,6 +116,7 @@ export default function ChalanNoPage({ navigation }) {
                         setWithBlouse(true);
                         setSendPiece('');
                         setSendMtr('');
+                        setSelectedOrder(row);
                       }}
                       style={{ flex: 1, alignItems: 'center' }}
                     >
@@ -120,7 +126,24 @@ export default function ChalanNoPage({ navigation }) {
                 ))}
               </View>
             ) : (
-              <View style={{ paddingHorizontal: 10 }} />
+              <View style={{ paddingHorizontal: 10 }}>
+                <View style={styles.poTableHeader}>
+                  <Text style={styles.poHeaderCell}>P.O.NO</Text>
+                  <Text style={styles.poHeaderCell}>PARTY NAME</Text>
+                  <Text style={styles.poHeaderCell}>D.NO</Text>
+                  <Text style={styles.poHeaderCell}>QTY</Text>
+                  <Text style={styles.poHeaderCell}>STATUS</Text>
+                </View>
+                {doneRows.map((row, idx) => (
+                  <View key={`drow-${idx}`} style={styles.poTableRow}>
+                    <Text style={styles.poCell}>{String(row.poNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.partyName)}</Text>
+                    <Text style={styles.poCell}>{String(row.designNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.qty)}</Text>
+                    <Text style={[styles.poCell, { color: '#10B981' }]}>DONE</Text>
+                  </View>
+                ))}
+              </View>
             )}
           </View>
 
@@ -145,12 +168,28 @@ export default function ChalanNoPage({ navigation }) {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Send to Jecard</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+                <TouchableOpacity style={styles.closeButton} onPress={() => { setShowSendModal(false); setSelectedOrder(null); }}>
                   <Text style={styles.closeButtonText}>×</Text>
                 </TouchableOpacity>
               </View>
 
               <View style={{ paddingHorizontal: 10 }}>
+                {/* Order Preview */}
+                <View style={styles.previewBox}>
+                  <Text style={styles.previewTitle}>Order Preview</Text>
+                  <View style={styles.previewRowHeader}>
+                    <Text style={styles.previewHeaderCell}>P.O.NO</Text>
+                    <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
+                    <Text style={styles.previewHeaderCell}>D.NO</Text>
+                    <Text style={styles.previewHeaderCell}>QTY</Text>
+                  </View>
+                  <View style={styles.previewRowBody}>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.poNo) : '—'}</Text>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.partyName) : '—'}</Text>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.designNo) : '—'}</Text>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.qty) : '—'}</Text>
+                  </View>
+                </View>
                 {/* Category Tabs */}
                 <View style={styles.segmentContainer}>
                   {[
@@ -229,7 +268,48 @@ export default function ChalanNoPage({ navigation }) {
 
                 <TouchableOpacity
                   style={[styles.sendButton, { marginTop: 22 }]}
-                  onPress={() => setShowSendModal(false)}
+                  onPress={async () => {
+                    try {
+                      // Build sent row with entered quantities
+                      const enriched = {
+                        ...(selectedOrder || {}),
+                        piece: String(sendPiece || ''),
+                        mtr: String(sendMtr || ''),
+                        category: sendCategory,
+                        withBlouse: sendCategory === 'garment' ? undefined : !!withBlouse,
+                      };
+
+                      // Update pending -> done
+                      const pendingRaw = await AsyncStorage.getItem('party_order_rows');
+                      const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+                      const nextPending = pending.filter((r) => !(String(r.poNo) === String(enriched.poNo) && String(r.designNo) === String(enriched.designNo) && String(r.partyName) === String(enriched.partyName)));
+                      await AsyncStorage.setItem('party_order_rows', JSON.stringify(nextPending));
+
+                      const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
+                      const doneList = doneRaw ? JSON.parse(doneRaw) : [];
+                      const nextDone = [...doneList, enriched];
+                      await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(nextDone));
+
+                      // Enqueue to Jecard list
+                      const jKey = sendCategory === 'white' ? 'jecard_white_rows' : (sendCategory === 'color' ? 'jecard_color_rows' : 'jecard_garment_rows');
+                      const jRaw = await AsyncStorage.getItem(jKey);
+                      const jList = jRaw ? JSON.parse(jRaw) : [];
+                      await AsyncStorage.setItem(jKey, JSON.stringify([...jList, enriched]));
+
+                      // Update local state
+                      setPartyRows(nextPending);
+                      setDoneRows(nextDone);
+
+                      // Close modal and clear
+                      setShowSendModal(false);
+                      setSelectedOrder(null);
+                      setSendPiece('');
+                      setSendMtr('');
+                    } catch (e) {
+                      setShowSendModal(false);
+                      setSelectedOrder(null);
+                    }
+                  }}
                   activeOpacity={0.9}
                 >
                   <Text style={styles.sendButtonText}>Send</Text>
@@ -329,12 +409,28 @@ export default function ChalanNoPage({ navigation }) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Send to Jecard</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+              <TouchableOpacity style={styles.closeButton} onPress={() => { setShowSendModal(false); setSelectedOrder(null); }}>
                 <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
 
             <View style={{ paddingHorizontal: 10 }}>
+              {/* Order Preview */}
+              <View style={styles.previewBox}>
+                <Text style={styles.previewTitle}>Order Preview</Text>
+                <View style={styles.previewRowHeader}>
+                  <Text style={styles.previewHeaderCell}>P.O.NO</Text>
+                  <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
+                  <Text style={styles.previewHeaderCell}>D.NO</Text>
+                  <Text style={styles.previewHeaderCell}>QTY</Text>
+                </View>
+                <View style={styles.previewRowBody}>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.poNo) : '—'}</Text>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.partyName) : '—'}</Text>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.designNo) : '—'}</Text>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.qty) : '—'}</Text>
+                </View>
+              </View>
               {/* Category Tabs */}
               <View style={styles.segmentContainer}>
                 {[
@@ -709,9 +805,9 @@ const styles = StyleSheet.create({
     borderColor: '#1e90ff',
   },
   segmentText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 14,
     letterSpacing: 0.2,
   },
   segmentTextActive: {
@@ -751,7 +847,7 @@ const styles = StyleSheet.create({
     borderColor: '#10B981',
   },
   toggleText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   toggleTextActive: {
@@ -772,5 +868,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  previewBox: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333333',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  previewTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  previewRowHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#111111',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  previewHeaderCell: {
+    flex: 1,
+    color: '#00BFFF',
+    fontWeight: '700',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  previewRowBody: {
+    flexDirection: 'row',
+    backgroundColor: '#2E2E2E',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: '#444444',
+  },
+  previewBodyCell: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
