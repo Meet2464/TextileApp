@@ -7,20 +7,84 @@ import {
   Dimensions,
   Modal,
   TextInput,
+  Alert,
 } from 'react-native';
 import SelectSaree from './SelectSaree';
+import ReceivingChallanList from './ReceivingChallanList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
 export default function ChalanNoPage({ navigation }) {
-  const [showInsertModal, setShowInsertModal] = useState(false);
   const [showSelect, setShowSelect] = useState(false);
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
   const [partyRows, setPartyRows] = useState([]);
   const [showSendModal, setShowSendModal] = useState(false);
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [receiveChallanNo, setReceiveChallanNo] = useState('');
+  const [receiveRoute, setReceiveRoute] = useState('');
+  const [showRouteList, setShowRouteList] = useState(false);
+  const [receiveDesignNo, setReceiveDesignNo] = useState('');
+  const [receiveTp, setReceiveTp] = useState('');
+  const [receiveMtr, setReceiveMtr] = useState('');
+  const [showReceiveList, setShowReceiveList] = useState(false);
+  const [receiveList, setReceiveList] = useState([]);
+  const [navigateReceiveList, setNavigateReceiveList] = useState(false);
+
+  const RECEIVING_STORAGE_KEY = 'receiving_challan_records';
+
+  useEffect(() => {
+    if (showReceiveList) {
+      (async () => {
+        try {
+          const raw = await AsyncStorage.getItem(RECEIVING_STORAGE_KEY);
+          setReceiveList(raw ? JSON.parse(raw) : []);
+        } catch (e) {
+          setReceiveList([]);
+        }
+      })();
+    }
+  }, [showReceiveList]);
+
+  const saveReceivingChallan = async () => {
+    const missing = [];
+    if (!receiveChallanNo.trim()) missing.push('Challan No');
+    if (!receiveRoute.trim()) missing.push('Route');
+    if (!receiveDesignNo.trim()) missing.push('Design No');
+    if (!receiveTp.trim()) missing.push('TP');
+    if (!receiveMtr.trim()) missing.push('Mtr');
+    if (missing.length > 0) {
+      Alert.alert('Missing fields', `Please fill: ${missing.join(', ')}`);
+      return;
+    }
+
+    const entry = {
+      id: Date.now(),
+      challanNo: receiveChallanNo.trim(),
+      route: receiveRoute.trim(),
+      designNo: receiveDesignNo.trim(),
+      tp: receiveTp.trim(),
+      mtr: receiveMtr.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const raw = await AsyncStorage.getItem(RECEIVING_STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      arr.unshift(entry);
+      await AsyncStorage.setItem(RECEIVING_STORAGE_KEY, JSON.stringify(arr));
+      setShowReceiveModal(false);
+      setReceiveChallanNo('');
+      setReceiveRoute('');
+      setReceiveDesignNo('');
+      setReceiveTp('');
+      setReceiveMtr('');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save receiving challan');
+    }
+  };
   const [sendCategory, setSendCategory] = useState('color'); // 'color' | 'white' | 'garment'
   const [withBlouse, setWithBlouse] = useState(true);
   const [sendPiece, setSendPiece] = useState('');
@@ -48,15 +112,7 @@ export default function ChalanNoPage({ navigation }) {
     }
   }, [showPartyOrder]);
 
-  const handleInsertClick = () => {
-    setShowInsertModal(true);
-  };
-
-  const handleInsertChalan = () => {
-    // TODO: Implement insert chalan functionality
-    console.log('Insert chalan clicked');
-    setShowInsertModal(false);
-  };
+  // Receiving Challan button can be wired later to the desired flow
 
   // SelectSaree view locked to chosen category
   if (showSelect) {
@@ -64,6 +120,15 @@ export default function ChalanNoPage({ navigation }) {
       <SelectSaree 
         navigation={{ goBack: () => setShowSelect(false) }} 
         allowedType={allowedType}
+      />
+    );
+  }
+
+  // Receiving Challan List as a full page
+  if (navigateReceiveList) {
+    return (
+      <ReceivingChallanList 
+        navigation={{ goBack: () => setNavigateReceiveList(false) }}
       />
     );
   }
@@ -271,43 +336,133 @@ export default function ChalanNoPage({ navigation }) {
       </View>
 
       {/* Bottom Navigation Bar - Only Insert Button */}
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.insertButton} onPress={handleInsertClick}>
-          <Icon name="add" size={28} color="#FFFFFF" />
+      <View style={[styles.navBar, { justifyContent: 'space-between' }]}>
+        <TouchableOpacity
+          style={[styles.reportButton, { flex: 1, marginRight: 10 }]}
+          onPress={() => setShowReceiveModal(true)}
+        >
+          <Text style={styles.reportButtonText}>RECEIVING CHLLAN</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuIconBtn}
+          onPress={() => setNavigateReceiveList(true)}
+          activeOpacity={0.9}
+        >
+          <Icon name="menu" size={22} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
-      {/* Insert Modal */}
+      {/* Receiving Chllan Modal */}
       <Modal
-        visible={showInsertModal}
+        visible={showReceiveModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowInsertModal(false)}
+        onRequestClose={() => setShowReceiveModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Insert New Chalan</Text>
+              <Text style={styles.modalTitle}>Receiving Chllan</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
-                onPress={() => setShowInsertModal(false)}
+                onPress={() => setShowReceiveModal(false)}
               >
                 <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
-            
-            <View style={styles.modalBody}>
-              <Text style={styles.modalText}>
-                This is where you can insert a new chalan number and details.
-              </Text>
-              
-              <TouchableOpacity style={styles.insertChalanButton} onPress={handleInsertChalan}>
-                <Text style={styles.insertChalanButtonText}>Insert Chalan</Text>
+
+            <View style={{ paddingHorizontal: 10 }}>
+              <Text style={styles.inputLabel}>Challan No</Text>
+              <TextInput
+                style={styles.textInput}
+                value={receiveChallanNo}
+                onChangeText={setReceiveChallanNo}
+                placeholder="Enter challan no"
+                placeholderTextColor="#999"
+              />
+
+              <View style={{ height: 16 }} />
+              <Text style={styles.inputLabel}>Route</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.textInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                onPress={() => setShowRouteList((v) => !v)}
+              >
+                <Text style={{ color: receiveRoute ? '#FFFFFF' : '#999999', fontSize: 16 }}>
+                  {receiveRoute || 'Select route'}
+                </Text>
+                <Icon name={showRouteList ? 'chevron-up' : 'chevron-down'} size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+              {showRouteList && (
+                <View style={styles.dropdownList}>
+                  {[
+                    'butta to Jecard',
+                    'bleach to Jecard',
+                    'cotting to Om Sai',
+                    'finish to om sai',
+                  ].map((opt) => (
+                    <TouchableOpacity
+                      key={opt}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setReceiveRoute(opt);
+                        setShowRouteList(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{opt}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={{ height: 16 }} />
+              <Text style={styles.inputLabel}>Design No</Text>
+              <TextInput
+                style={styles.textInput}
+                value={receiveDesignNo}
+                onChangeText={setReceiveDesignNo}
+                placeholder="Enter design no"
+                placeholderTextColor="#999"
+              />
+
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>TP</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    keyboardType="numeric"
+                    value={receiveTp}
+                    onChangeText={setReceiveTp}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Mtr</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    keyboardType="numeric"
+                    value={receiveMtr}
+                    onChangeText={setReceiveMtr}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.sendButton, { marginTop: 22 }]}
+                onPress={saveReceivingChallan}
+                activeOpacity={0.9}
+              >
+                <Text style={styles.sendButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* Receiving Chllan List moved to its own page */}
 
       {/* Send to Jecard Modal */}
       <Modal
@@ -763,5 +918,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  menuIconBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#3A3A3A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  dropdownList: {
+    marginTop: 8,
+    borderWidth: 2,
+    borderColor: '#555555',
+    borderRadius: 12,
+    backgroundColor: '#2E2E2E',
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444444',
+  },
+  dropdownItemText: {
+    color: '#FFFFFF',
+    fontSize: 16,
   },
 });

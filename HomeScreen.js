@@ -243,7 +243,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.mainButton} onPress={handleChalanNo}>
-            <Text style={styles.mainButtonText}>CHALAN NO</Text>
+            <Text style={styles.mainButtonText}>CHALLAN</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.mainButton} onPress={handleReport}>
