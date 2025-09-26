@@ -14,7 +14,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { db } from './firebase';
 import { useUser } from './contexts/UserContext';
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where, onSnapshot } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // SelectSaree is now accessible only via Reports
 // Removed Color/White/Garment page imports per request
@@ -116,7 +116,7 @@ export default function OrderNoPage({ navigation }) {
   };
 
   const loadOrders = async () => {
-    setLoadingOrders(true);
+    // Deprecated: kept for compatibility; real-time listener below handles updates
     try {
       const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
       const ordersQuery = tenantId
@@ -124,28 +124,17 @@ export default function OrderNoPage({ navigation }) {
         : query(collection(db, 'orders'));
       const querySnapshot = await getDocs(ordersQuery);
       const orders = [];
-      
-      querySnapshot.forEach((doc) => {
-        orders.push({
-          id: doc.id,
-          ...doc.data() // P.O. NO is now stored in database
-        });
+      querySnapshot.forEach((docSnap) => {
+        orders.push({ id: docSnap.id, ...docSnap.data() });
       });
-      
-      // Show newest first: higher P.O. NO on top; stable order after edits
-      const sorted = orders.sort((a, b) => {
-        const aNo = Number(a.poNo) || 0;
-        const bNo = Number(b.poNo) || 0;
-        return bNo - aNo;
-      });
+      const sorted = orders.sort((a, b) => (Number(b.poNo || 0) - Number(a.poNo || 0)));
       setOrdersList(sorted);
-      setFilteredOrders(sorted);
-    } catch (error) {
-      console.error('Error loading orders: ', error);
-      Alert.alert('Error', 'Failed to load orders');
-    } finally {
-      setLoadingOrders(false);
-    }
+      setFilteredOrders((prev) => (searchQuery?.trim() ? sorted.filter(order => 
+        order.partyName?.toLowerCase?.().includes(searchQuery.toLowerCase()) ||
+        order.designNo?.toLowerCase?.().includes(searchQuery.toLowerCase()) ||
+        order.orderDate?.includes(searchQuery)
+      ) : sorted));
+    } catch {}
   };
 
   const handleSearch = (query) => {
@@ -163,8 +152,37 @@ export default function OrderNoPage({ navigation }) {
   };
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    setLoadingOrders(true);
+    let unsubscribe;
+    try {
+      const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId));
+      const baseQuery = tenantId
+        ? query(collection(db, 'orders'), where('companyId', '==', tenantId))
+        : query(collection(db, 'orders'));
+      unsubscribe = onSnapshot(baseQuery, (snap) => {
+        const orders = [];
+        snap.forEach((docSnap) => orders.push({ id: docSnap.id, ...docSnap.data() }));
+        const sorted = orders.sort((a, b) => (Number(b.poNo || 0) - Number(a.poNo || 0)));
+        setOrdersList(sorted);
+        setFilteredOrders((prev) => (searchQuery?.trim() ? sorted.filter(order => 
+          order.partyName?.toLowerCase?.().includes(searchQuery.toLowerCase()) ||
+          order.designNo?.toLowerCase?.().includes(searchQuery.toLowerCase()) ||
+          order.orderDate?.includes(searchQuery)
+        ) : sorted));
+        setLoadingOrders(false);
+      }, (err) => {
+        console.error('Realtime orders error:', err);
+        setLoadingOrders(false);
+      });
+    } catch (e) {
+      console.error('Realtime listener init error:', e);
+      setLoadingOrders(false);
+    }
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData, getTenantId]);
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
