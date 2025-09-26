@@ -168,6 +168,49 @@ export default function WhiteSareeJecard({ navigation }) {
                   />
                 </View>
               </View>
+
+              <TouchableOpacity
+                style={{ marginTop: 16, backgroundColor: '#FF6B35', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ff5722' }}
+                onPress={async () => {
+                  try {
+                    const pendingKey = 'jecard_white_rows';
+                    const doneKey = 'jecard_white_done_rows';
+                    const buttaKey = 'butta_white_rows';
+
+                    const pendingRaw = await AsyncStorage.getItem(pendingKey);
+                    const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+                    const nextPending = pending.filter((x) => !(String(x.poNo) === String(selectedRow.poNo) && String(x.designNo) === String(selectedRow.designNo)));
+                    await AsyncStorage.setItem(pendingKey, JSON.stringify(nextPending));
+
+                    const enriched = { ...selectedRow, clientName, chalanNo, piece: pieceVal, mtr: mtrVal };
+
+                    const doneRaw = await AsyncStorage.getItem(doneKey);
+                    const doneList = doneRaw ? JSON.parse(doneRaw) : [];
+                    const nextDone = [...doneList, enriched];
+                    await AsyncStorage.setItem(doneKey, JSON.stringify(nextDone));
+
+                    const buttaRaw = await AsyncStorage.getItem(buttaKey);
+                    const butta = buttaRaw ? JSON.parse(buttaRaw) : [];
+                    await AsyncStorage.setItem(buttaKey, JSON.stringify([...butta, {
+                      poNo: enriched.poNo,
+                      clientName: enriched.clientName || enriched.partyName || '',
+                      chalanNo: enriched.chalanNo || '',
+                      designNo: enriched.designNo || '',
+                      piece: enriched.piece || '',
+                      mtr: enriched.mtr || '',
+                    }]));
+
+                    setRows(nextPending);
+                    setDoneRows(nextDone);
+                    setShowPreview(false);
+                    setSelectedRow(null);
+                    setActiveTab('done');
+                    navigation?.navigate?.('WhiteSareeButtaCutting');
+                  } catch {}
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '800' }}>Send</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
