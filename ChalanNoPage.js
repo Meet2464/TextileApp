@@ -21,6 +21,8 @@ export default function ChalanNoPage({ navigation }) {
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
   const [partyRows, setPartyRows] = useState([]);
+  const [doneRows, setDoneRows] = useState([]);
+  const [poActiveTab, setPoActiveTab] = useState('pending'); // 'pending' | 'done'
   const [showSendModal, setShowSendModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [receiveChallanNo, setReceiveChallanNo] = useState('');
@@ -89,6 +91,7 @@ export default function ChalanNoPage({ navigation }) {
   const [withBlouse, setWithBlouse] = useState(true);
   const [sendPiece, setSendPiece] = useState('');
   const [sendMtr, setSendMtr] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
   // Simple close handling for Send modal
 
   // Auto-calculate Mtr based on Piece and blouse selection for Color/White
@@ -105,8 +108,11 @@ export default function ChalanNoPage({ navigation }) {
         try {
           const raw = await AsyncStorage.getItem('party_order_rows');
           setPartyRows(raw ? JSON.parse(raw) : []);
+          const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
+          setDoneRows(doneRaw ? JSON.parse(doneRaw) : []);
         } catch {
           setPartyRows([]);
+          setDoneRows([]);
         }
       })();
     }
@@ -138,53 +144,80 @@ export default function ChalanNoPage({ navigation }) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => setShowPartyOrder(false)}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              setShowSendModal(false);
+              setShowPartyOrder(false);
+            }}
+          >
             <Icon name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Party Order</Text>
           <View style={styles.placeholder} />
         </View>
-
         <View style={styles.content}>
           <View style={{ flex: 1 }}>
-            <View style={{ paddingHorizontal: 10 }}>
-            <View style={styles.poTableHeader}>
-              <Text style={styles.poHeaderCell}>P.O.NO</Text>
-              <Text style={styles.poHeaderCell}>PARTY NAME</Text>
-              <Text style={styles.poHeaderCell}>D.NO</Text>
-              <Text style={styles.poHeaderCell}>QTY</Text>
-              <Text style={styles.poHeaderCell}>SEND</Text>
-            </View>
-            {partyRows.map((row, idx) => (
-              <View key={`prow-${idx}`} style={styles.poTableRow}>
-                <Text style={styles.poCell}>{String(row.poNo)}</Text>
-                <Text style={styles.poCell}>{String(row.partyName)}</Text>
-                <Text style={styles.poCell}>{String(row.designNo)}</Text>
-                <Text style={styles.poCell}>{String(row.qty)}</Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setShowSendModal(true);
-                    setSendCategory('color');
-                    setWithBlouse(true);
-                    setSendPiece('');
-                    setSendMtr('');
-                  }}
-                  style={{ flex: 1, alignItems: 'center' }}
-                >
-                  <Text style={[styles.poCell, { color: '#00BFFF', fontWeight: '700' }]}>SEND</Text>
-                </TouchableOpacity>
+            {poActiveTab === 'pending' ? (
+              <View style={{ paddingHorizontal: 10 }}>
+                <View style={styles.poTableHeader}>
+                  <Text style={styles.poHeaderCell}>P.O.NO</Text>
+                  <Text style={styles.poHeaderCell}>PARTY NAME</Text>
+                  <Text style={styles.poHeaderCell}>D.NO</Text>
+                  <Text style={styles.poHeaderCell}>QTY</Text>
+                  <Text style={styles.poHeaderCell}>SEND</Text>
+                </View>
+                {partyRows.map((row, idx) => (
+                  <View key={`prow-${idx}`} style={styles.poTableRow}>
+                    <Text style={styles.poCell}>{String(row.poNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.partyName)}</Text>
+                    <Text style={styles.poCell}>{String(row.designNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.qty)}</Text>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setShowSendModal(true);
+                        setSendCategory('color');
+                        setWithBlouse(true);
+                        setSendPiece('');
+                        setSendMtr('');
+                        setSelectedOrder(row);
+                      }}
+                      style={{ flex: 1, alignItems: 'center' }}
+                    >
+                      <Text style={[styles.poCell, { color: '#00BFFF', fontWeight: '700' }]}>SEND</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
-            ))}
-            </View>
+            ) : (
+              <View style={{ paddingHorizontal: 10 }}>
+                <View style={styles.poTableHeader}>
+                  <Text style={styles.poHeaderCell}>P.O.NO</Text>
+                  <Text style={styles.poHeaderCell}>PARTY NAME</Text>
+                  <Text style={styles.poHeaderCell}>D.NO</Text>
+                  <Text style={styles.poHeaderCell}>QTY</Text>
+                  <Text style={styles.poHeaderCell}>STATUS</Text>
+                </View>
+                {doneRows.map((row, idx) => (
+                  <View key={`drow-${idx}`} style={styles.poTableRow}>
+                    <Text style={styles.poCell}>{String(row.poNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.partyName)}</Text>
+                    <Text style={styles.poCell}>{String(row.designNo)}</Text>
+                    <Text style={styles.poCell}>{String(row.qty)}</Text>
+                    <Text style={[styles.poCell, { color: '#10B981' }]}>DONE</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Bottom two-button panel (sticky at bottom of Party Order) */}
           <View style={styles.bottomPanel}>
-            <TouchableOpacity style={styles.pillButton}>
+            <TouchableOpacity style={styles.pillButton} onPress={() => setPoActiveTab('pending')}>
               <Text style={styles.pillText}>Pending data</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.pillButton}>
+            <TouchableOpacity style={styles.pillButton} onPress={() => setPoActiveTab('done')}>
               <Text style={styles.pillText}>done data</Text>
             </TouchableOpacity>
           </View>
@@ -200,12 +233,28 @@ export default function ChalanNoPage({ navigation }) {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Send to Jecard</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+                <TouchableOpacity style={styles.closeButton} onPress={() => { setShowSendModal(false); setSelectedOrder(null); }}>
                   <Text style={styles.closeButtonText}>×</Text>
                 </TouchableOpacity>
               </View>
 
               <View style={{ paddingHorizontal: 10 }}>
+                {/* Order Preview */}
+                <View style={styles.previewBox}>
+                  <Text style={styles.previewTitle}>Order Preview</Text>
+                  <View style={styles.previewRowHeader}>
+                    <Text style={styles.previewHeaderCell}>P.O.NO</Text>
+                    <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
+                    <Text style={styles.previewHeaderCell}>D.NO</Text>
+                    <Text style={styles.previewHeaderCell}>QTY</Text>
+                  </View>
+                  <View style={styles.previewRowBody}>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.poNo) : '—'}</Text>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.partyName) : '—'}</Text>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.designNo) : '—'}</Text>
+                    <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.qty) : '—'}</Text>
+                  </View>
+                </View>
                 {/* Category Tabs */}
                 <View style={styles.segmentContainer}>
                   {[
@@ -284,7 +333,48 @@ export default function ChalanNoPage({ navigation }) {
 
                 <TouchableOpacity
                   style={[styles.sendButton, { marginTop: 22 }]}
-                  onPress={() => setShowSendModal(false)}
+                  onPress={async () => {
+                    try {
+                      // Build sent row with entered quantities
+                      const enriched = {
+                        ...(selectedOrder || {}),
+                        piece: String(sendPiece || ''),
+                        mtr: String(sendMtr || ''),
+                        category: sendCategory,
+                        withBlouse: sendCategory === 'garment' ? undefined : !!withBlouse,
+                      };
+
+                      // Update pending -> done
+                      const pendingRaw = await AsyncStorage.getItem('party_order_rows');
+                      const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+                      const nextPending = pending.filter((r) => !(String(r.poNo) === String(enriched.poNo) && String(r.designNo) === String(enriched.designNo) && String(r.partyName) === String(enriched.partyName)));
+                      await AsyncStorage.setItem('party_order_rows', JSON.stringify(nextPending));
+
+                      const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
+                      const doneList = doneRaw ? JSON.parse(doneRaw) : [];
+                      const nextDone = [...doneList, enriched];
+                      await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(nextDone));
+
+                      // Enqueue to Jecard list
+                      const jKey = sendCategory === 'white' ? 'jecard_white_rows' : (sendCategory === 'color' ? 'jecard_color_rows' : 'jecard_garment_rows');
+                      const jRaw = await AsyncStorage.getItem(jKey);
+                      const jList = jRaw ? JSON.parse(jRaw) : [];
+                      await AsyncStorage.setItem(jKey, JSON.stringify([...jList, enriched]));
+
+                      // Update local state
+                      setPartyRows(nextPending);
+                      setDoneRows(nextDone);
+
+                      // Close modal and clear
+                      setShowSendModal(false);
+                      setSelectedOrder(null);
+                      setSendPiece('');
+                      setSendMtr('');
+                    } catch (e) {
+                      setShowSendModal(false);
+                      setSelectedOrder(null);
+                    }
+                  }}
                   activeOpacity={0.9}
                 >
                   <Text style={styles.sendButtonText}>Send</Text>
@@ -293,7 +383,6 @@ export default function ChalanNoPage({ navigation }) {
             </View>
           </View>
         </Modal>
-
       </View>
     );
   }
@@ -475,12 +564,28 @@ export default function ChalanNoPage({ navigation }) {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Send to Jecard</Text>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setShowSendModal(false)}>
+              <TouchableOpacity style={styles.closeButton} onPress={() => { setShowSendModal(false); setSelectedOrder(null); }}>
                 <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
 
             <View style={{ paddingHorizontal: 10 }}>
+              {/* Order Preview */}
+              <View style={styles.previewBox}>
+                <Text style={styles.previewTitle}>Order Preview</Text>
+                <View style={styles.previewRowHeader}>
+                  <Text style={styles.previewHeaderCell}>P.O.NO</Text>
+                  <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
+                  <Text style={styles.previewHeaderCell}>D.NO</Text>
+                  <Text style={styles.previewHeaderCell}>QTY</Text>
+                </View>
+                <View style={styles.previewRowBody}>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.poNo) : '—'}</Text>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.partyName) : '—'}</Text>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.designNo) : '—'}</Text>
+                  <Text style={styles.previewBodyCell}>{selectedOrder ? String(selectedOrder.qty) : '—'}</Text>
+                </View>
+              </View>
               {/* Category Tabs */}
               <View style={styles.segmentContainer}>
                 {[
@@ -855,9 +960,9 @@ const styles = StyleSheet.create({
     borderColor: '#1e90ff',
   },
   segmentText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 14,
     letterSpacing: 0.2,
   },
   segmentTextActive: {
@@ -897,7 +1002,7 @@ const styles = StyleSheet.create({
     borderColor: '#10B981',
   },
   toggleText: {
-    color: 'rgba(255,255,255,0.8)',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   toggleTextActive: {

@@ -243,6 +243,45 @@ export default function OrderNoPage({ navigation }) {
 
       // Update in Firebase Firestore
       await updateDoc(doc(db, 'orders', editingOrder.id), orderData);
+
+      // Sync Party Order rows in AsyncStorage for this P.O. NO so Chalan page reflects edits
+      try {
+        // Build fresh rows from edited data
+        const rows = (Array.isArray(orderData.designNos) && orderData.designNos.length > 0
+          ? orderData.designNos.map((dn, idx) => ({
+              poNo: editingOrder.poNo,
+              partyName: orderData.partyName,
+              orderDate: orderData.orderDate,
+              designNo: String(dn || ''),
+              qty: String(orderData.designQtys?.[idx] || ''),
+            }))
+          : [{
+              poNo: editingOrder.poNo,
+              partyName: orderData.partyName,
+              orderDate: orderData.orderDate,
+              designNo: String(orderData.designNo || ''),
+              qty: String(quantity || ''),
+            }]);
+        const cleanRows = rows.filter(r => (r.designNo || '').trim() !== '');
+
+        // Replace in pending list
+        const pendingRaw = await AsyncStorage.getItem('party_order_rows');
+        const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+        const nextPending = Array.isArray(pending)
+          ? [...pending.filter(r => String(r.poNo) !== String(editingOrder.poNo)), ...cleanRows]
+          : [...cleanRows];
+        await AsyncStorage.setItem('party_order_rows', JSON.stringify(nextPending));
+
+        // Replace in done list as well (if any were already sent)
+        const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
+        const done = doneRaw ? JSON.parse(doneRaw) : [];
+        const nextDone = Array.isArray(done)
+          ? [...done.filter(r => String(r.poNo) !== String(editingOrder.poNo)), ...cleanRows]
+          : [...cleanRows];
+        await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(nextDone));
+      } catch (syncErr) {
+        console.log('Party Order sync warning:', syncErr?.message || syncErr);
+      }
       
       Alert.alert('Success', 'Order updated successfully!', [
         {
@@ -281,6 +320,28 @@ export default function OrderNoPage({ navigation }) {
           onPress: async () => {
             try {
               await deleteDoc(doc(db, 'orders', order.id));
+
+              // Remove from Party Order (pending and done) and any Jecard queues
+              try {
+                const poNoStr = String(order.poNo);
+                const pendingRaw = await AsyncStorage.getItem('party_order_rows');
+                const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
+                const colorRaw = await AsyncStorage.getItem('jecard_color_rows');
+                const whiteRaw = await AsyncStorage.getItem('jecard_white_rows');
+                const garmentRaw = await AsyncStorage.getItem('jecard_garment_rows');
+
+                const filterOutPo = (arr) =>
+                  Array.isArray(arr) ? arr.filter((r) => String(r?.poNo) !== poNoStr) : [];
+
+                await AsyncStorage.setItem('party_order_rows', JSON.stringify(filterOutPo(pendingRaw ? JSON.parse(pendingRaw) : [])));
+                await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(filterOutPo(doneRaw ? JSON.parse(doneRaw) : [])));
+                await AsyncStorage.setItem('jecard_color_rows', JSON.stringify(filterOutPo(colorRaw ? JSON.parse(colorRaw) : [])));
+                await AsyncStorage.setItem('jecard_white_rows', JSON.stringify(filterOutPo(whiteRaw ? JSON.parse(whiteRaw) : [])));
+                await AsyncStorage.setItem('jecard_garment_rows', JSON.stringify(filterOutPo(garmentRaw ? JSON.parse(garmentRaw) : [])));
+              } catch (storageErr) {
+                console.log('Clean-up warning:', storageErr?.message || storageErr);
+              }
+
               Alert.alert('Success', 'Order deleted successfully!');
               handleClosePreview();
               loadOrders(); // Refresh the list
@@ -391,8 +452,13 @@ export default function OrderNoPage({ navigation }) {
 
       const cleanRows = rows.filter(r => (r.designNo || '').trim() !== '');
       setPartyOrderRows(cleanRows);
-      // Persist rows for Chalan → Party Order page
-      try { await AsyncStorage.setItem('party_order_rows', JSON.stringify(cleanRows)); } catch {}
+      // Persist rows for Chalan → Party Order page (append to existing pending list)
+      try {
+        const existingRaw = await AsyncStorage.getItem('party_order_rows');
+        const existing = existingRaw ? JSON.parse(existingRaw) : [];
+        const merged = Array.isArray(existing) ? [...existing, ...cleanRows] : [...cleanRows];
+        await AsyncStorage.setItem('party_order_rows', JSON.stringify(merged));
+      } catch {}
       setShowInsertModal(false);
       // Optional: could navigate user to Chalan page manually; staying here as requested earlier
 
