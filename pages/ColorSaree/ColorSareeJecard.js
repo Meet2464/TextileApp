@@ -83,6 +83,14 @@ export default function ColorSareeJecard({ navigation }) {
           ))}
         </ScrollView>
 
+        {activeTab === 'done' && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.smallTagBtn} onPress={() => {}}>
+              <Text style={styles.smallTagText}>Sending challan</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Bottom two-button panel */}
         <View style={styles.bottomPanel}>
           <TouchableOpacity style={styles.pillButton} onPress={() => setActiveTab('pending')}>
@@ -318,6 +326,30 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#555555',
+  },
+  actionRow: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  smallTagBtn: {
+    backgroundColor: '#00FFFF',
+    borderRadius: 22,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: '#7FFFD4',
+    shadowColor: '#00FFFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  smallTagText: {
+    color: '#003344',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.3,
   },
   previewHeader: {
     flexDirection: 'row',
