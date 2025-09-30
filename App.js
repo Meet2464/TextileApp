@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
+import * as MediaLibrary from 'expo-media-library';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserProvider, useUser } from './contexts/UserContext';
 import LoginScreen from './LoginScreen';
 import RoleSelection from './RoleSelection';
@@ -12,6 +14,21 @@ import DesignNoPage from './DesignNoPage';
 function AppContent() {
   const { user, userData, loading } = useUser();
   const [currentScreen, setCurrentScreen] = useState('Login');
+
+  // Ask storage permission once on first app open (Android) for saving to Downloads
+  useEffect(() => {
+    (async () => {
+      try {
+        if (Platform.OS === 'android') {
+          const asked = await AsyncStorage.getItem('mlib_perm_done');
+          if (!asked) {
+            await MediaLibrary.requestPermissionsAsync();
+            await AsyncStorage.setItem('mlib_perm_done', '1');
+          }
+        }
+      } catch {}
+    })();
+  }, []);
 
   const navigation = {
     navigate: (screen) => {
