@@ -510,7 +510,7 @@ export default function OrderNoPage({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation?.goBack()}
         >
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order No</Text>
         <View style={styles.placeholder} />
@@ -694,8 +694,8 @@ export default function OrderNoPage({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+          </View>
+        </Modal>
 
       {/* Party Order Table (simple) */}
       <Modal
@@ -740,7 +740,7 @@ export default function OrderNoPage({ navigation }) {
             </View>
           </View>
         </View>
-      </Modal>
+        </Modal>
 
       {/* Date Picker Modal */}
       <Modal
@@ -1111,7 +1111,7 @@ export default function OrderNoPage({ navigation }) {
                   placeholder="Quantity"
                   value={tempDesignQty}
                   onChangeText={setTempDesignQty}
-                  keyboardType="numeric"
+                  keyboardType="number-pad"
                   placeholderTextColor="#999"
                 />
               </View>
@@ -1162,6 +1162,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
   },
   headerTitle: {
     fontSize: 20,

@@ -173,11 +173,11 @@ export default function ReceivingChallanList({ navigation }) {
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.inputLabel}>TP</Text>
-                  <TextInput style={[styles.textInput, styles.inputDisabled]} editable={false} keyboardType="numeric" value={editTp} placeholder="0" placeholderTextColor="#999" />
+                  <TextInput style={[styles.textInput, styles.inputDisabled]} editable={false} keyboardType="number-pad" value={editTp} placeholder="0" placeholderTextColor="#999" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.inputLabel}>Mtr</Text>
-                  <TextInput style={[styles.textInput, styles.inputDisabled]} editable={false} keyboardType="numeric" value={editMtr} placeholder="0" placeholderTextColor="#999" />
+                  <TextInput style={[styles.textInput, styles.inputDisabled]} editable={false} keyboardType="number-pad" value={editMtr} placeholder="0" placeholderTextColor="#999" />
                 </View>
               </View>
 
@@ -241,11 +241,11 @@ export default function ReceivingChallanList({ navigation }) {
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.inputLabel}>TP</Text>
-                  <TextInput style={styles.textInput} keyboardType="numeric" value={editTp} onChangeText={setEditTp} placeholder="0" placeholderTextColor="#999" />
+                  <TextInput style={styles.textInput} keyboardType="number-pad" value={editTp} onChangeText={setEditTp} placeholder="0" placeholderTextColor="#999" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.inputLabel}>Mtr</Text>
-                  <TextInput style={styles.textInput} keyboardType="numeric" value={editMtr} onChangeText={setEditMtr} placeholder="0" placeholderTextColor="#999" />
+                  <TextInput style={styles.textInput} keyboardType="number-pad" value={editMtr} onChangeText={setEditMtr} placeholder="0" placeholderTextColor="#999" />
                 </View>
               </View>
 

@@ -40,7 +40,7 @@ export default function ColorSareeJecard({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack?.()}>
-          <Text style={styles.backText}>{'<'}</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Color Saree - Jecard</Text>
         <View style={{ width: 24 }} />
@@ -52,10 +52,13 @@ export default function ColorSareeJecard({ navigation }) {
             <Text style={styles.headerCell}>D.NO</Text>
             <Text style={styles.headerCell}>PIECE</Text>
             <Text style={styles.headerCell}>MTR</Text>
-            <Text style={styles.headerCell}>{activeTab === 'pending' ? 'SEND' : 'PREVIEW'}</Text>
+            <Text style={styles.headerCell}>{activeTab === 'pending' ? 'SEND' : 'DONE'}</Text>
           </View>
           {(activeTab === 'pending' ? rows : doneRows).map((r, idx) => (
-            <View key={`row-${idx}`} style={styles.tableRow}>
+            <View
+              key={`row-${idx}`}
+              style={styles.tableRow}
+            >
               <Text style={styles.cell}>{String(r.poNo)}</Text>
               <Text style={styles.cell}>{String(r.designNo)}</Text>
               <Text style={styles.cell}>{String(r.piece || r.qty || '-')}</Text>
@@ -75,9 +78,9 @@ export default function ColorSareeJecard({ navigation }) {
                   <Text style={[styles.cell, { color: '#10B981', fontWeight: '700' }]}>SEND</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={{ flex: 1, alignItems: 'center' }} onPress={() => { setSelectedRow(r); setShowPreview(true); }}>
-                  <Text style={[styles.cell, { color: '#00BFFF', fontWeight: '700' }]}>VIEW</Text>
-                </TouchableOpacity>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={[styles.cell, { color: '#10B981', fontWeight: '900' }]}>DONE ✓</Text>
+                </View>
               )}
             </View>
           ))}
@@ -107,23 +110,52 @@ export default function ColorSareeJecard({ navigation }) {
           <View style={styles.previewOverlay}>
             <View style={styles.previewBox}>
               <View style={styles.previewHeader}>
-                <Text style={styles.previewTitle}>Order Preview</Text>
+                <Text style={styles.previewTitle}>{activeTab === 'pending' ? 'Jecard to Butta Cutting' : 'Party Order Preview'}</Text>
                 <TouchableOpacity onPress={() => { setShowPreview(false); setSelectedRow(null); }}>
                   <Text style={styles.closeText}>×</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.previewTableHeader}>
-                <Text style={styles.previewHeaderCell}>P.O.NO</Text>
-                <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
-                <Text style={styles.previewHeaderCell}>D.NO</Text>
-                <Text style={styles.previewHeaderCell}>PIECE</Text>
-              </View>
-              <View style={styles.previewTableRow}>
-                <Text style={styles.previewBodyCell}>{String(selectedRow.poNo)}</Text>
-                <Text style={styles.previewBodyCell}>{String(selectedRow.partyName || '-')}</Text>
-                <Text style={styles.previewBodyCell}>{String(selectedRow.designNo)}</Text>
-                <Text style={styles.previewBodyCell}>{String(selectedRow.piece || selectedRow.qty || '-')}</Text>
-              </View>
+              {activeTab === 'pending' ? (
+                <>
+                  <View style={styles.previewTableHeader}>
+                    <Text style={styles.previewHeaderCell}>P.O.NO</Text>
+                    <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
+                    <Text style={styles.previewHeaderCell}>D.NO</Text>
+                    <Text style={styles.previewHeaderCell}>PIECE</Text>
+                  </View>
+                  <View style={styles.previewTableRow}>
+                    <Text style={styles.previewBodyCell}>{String(selectedRow.poNo)}</Text>
+                    <Text style={styles.previewBodyCell}>{String(selectedRow.partyName || '-')}</Text>
+                    <Text style={styles.previewBodyCell}>{String(selectedRow.designNo)}</Text>
+                    <Text style={styles.previewBodyCell}>{String(selectedRow.piece || selectedRow.qty || '-')}</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  {/* Meta rows like Party Order Preview */}
+                  <View style={{ marginBottom: 8 }}>
+                    <Text style={{ color: '#CCCCCC' }}>Order No:</Text>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{String(selectedRow.poNo)}</Text>
+                  </View>
+                  <View style={{ marginBottom: 8 }}>
+                    <Text style={{ color: '#CCCCCC' }}>P.O. Date:</Text>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{String(selectedRow.orderDate || '-')}</Text>
+                  </View>
+                  <View style={{ marginBottom: 10 }}>
+                    <Text style={{ color: '#CCCCCC' }}>Party Name:</Text>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{String(selectedRow.partyName || '-')}</Text>
+                  </View>
+                  {/* Design/Qty table */}
+                  <View style={styles.previewTableHeader}>
+                    <Text style={styles.previewHeaderCell}>Design No</Text>
+                    <Text style={styles.previewHeaderCell}>Qty</Text>
+                  </View>
+                  <View style={styles.previewTableRow}>
+                    <Text style={styles.previewBodyCell}>{String(selectedRow.designNo || '-')}</Text>
+                    <Text style={styles.previewBodyCell}>{String(selectedRow.qty || selectedRow.piece || '-')}</Text>
+                  </View>
+                </>
+              )}
 
               {/* Extra fields below preview */}
               <View style={{ marginTop: 14 }}>
@@ -153,7 +185,7 @@ export default function ColorSareeJecard({ navigation }) {
                     style={styles.textInput}
                     placeholder="0"
                     placeholderTextColor="#999"
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={pieceVal}
                     onChangeText={(txt) => {
                       const digits = (txt || '').replace(/[^0-9]/g, '');
@@ -170,7 +202,7 @@ export default function ColorSareeJecard({ navigation }) {
                     style={styles.textInput}
                     placeholder="0"
                     placeholderTextColor="#999"
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={mtrVal}
                     onChangeText={setMtrVal}
                   />
@@ -237,8 +269,18 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 16,
   },
-  backButton: { padding: 6 },
-  backText: { color: '#fff', fontSize: 18 },
+  backButton: { 
+    padding: 8,
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+  },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
   body: { flex: 1 },
   bottomPanel: {

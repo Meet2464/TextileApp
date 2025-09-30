@@ -418,7 +418,7 @@ const uploadImageToSupabase = async (localUri) => {
           style={styles.backButton}
           onPress={() => navigation?.goBack()}
         >
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Design No</Text>
         <View style={styles.placeholder} />
@@ -680,6 +680,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
   },
   headerTitle: {
     fontSize: 20,

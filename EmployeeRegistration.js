@@ -118,7 +118,7 @@ export default function EmployeeRegistration({ navigation }) {
             style={styles.backButton}
             onPress={() => navigation.navigate('RoleSelection')}
           >
-            <Icon name="arrow-back" size={20} color="#000" />
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
         </View>
 
@@ -365,5 +365,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButtonText: {
+    color: '#000',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });

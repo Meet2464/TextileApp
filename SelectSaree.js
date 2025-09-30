@@ -382,7 +382,7 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
           style={styles.backButton}
           onPress={handleBack}
         >
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
@@ -508,6 +508,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
   },
   headerContent: {
     alignItems: 'center',

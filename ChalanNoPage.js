@@ -279,7 +279,7 @@ export default function ChalanNoPage({ navigation }) {
                     <Text style={styles.inputLabel}>Mtr</Text>
                     <TextInput
                       style={styles.textInput}
-                      keyboardType="numeric"
+                      keyboardType="number-pad"
                       value={sendMtr}
                       onChangeText={setSendMtr}
                       placeholder="0"
@@ -309,7 +309,7 @@ export default function ChalanNoPage({ navigation }) {
                         <Text style={styles.inputLabel}>Piece</Text>
                         <TextInput
                           style={styles.textInput}
-                          keyboardType="numeric"
+                          keyboardType="number-pad"
                           value={sendPiece}
                           onChangeText={setSendPiece}
                           placeholder="0"
@@ -320,7 +320,7 @@ export default function ChalanNoPage({ navigation }) {
                         <Text style={styles.inputLabel}>Mtr</Text>
                         <TextInput
                           style={styles.textInput}
-                          keyboardType="numeric"
+                          keyboardType="number-pad"
                           value={sendMtr}
                           onChangeText={setSendMtr}
                           placeholder="0"
@@ -395,7 +395,7 @@ export default function ChalanNoPage({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation?.goBack()}
         >
-          <Icon name="arrow-back" size={24} color="#FFFFFF" />
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chalan No</Text>
         <View style={styles.placeholder} />
@@ -519,7 +519,7 @@ export default function ChalanNoPage({ navigation }) {
                   <Text style={styles.inputLabel}>TP</Text>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={receiveTp}
                     onChangeText={setReceiveTp}
                     placeholder="0"
@@ -530,7 +530,7 @@ export default function ChalanNoPage({ navigation }) {
                   <Text style={styles.inputLabel}>Mtr</Text>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={receiveMtr}
                     onChangeText={setReceiveMtr}
                     placeholder="0"
@@ -610,7 +610,7 @@ export default function ChalanNoPage({ navigation }) {
                   <Text style={styles.inputLabel}>Mtr</Text>
                   <TextInput
                     style={styles.textInput}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={sendMtr}
                     onChangeText={setSendMtr}
                     placeholder="0"
@@ -640,7 +640,7 @@ export default function ChalanNoPage({ navigation }) {
                       <Text style={styles.inputLabel}>Piece</Text>
                       <TextInput
                         style={styles.textInput}
-                        keyboardType="numeric"
+                        keyboardType="number-pad"
                         value={sendPiece}
                         onChangeText={setSendPiece}
                         onFocus={() => {
@@ -657,7 +657,7 @@ export default function ChalanNoPage({ navigation }) {
                       <Text style={styles.inputLabel}>Mtr</Text>
                       <TextInput
                         style={styles.textInput}
-                        keyboardType="numeric"
+                        keyboardType="number-pad"
                         value={sendMtr}
                         onChangeText={setSendMtr}
                         onFocus={() => {
@@ -705,6 +705,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
   },
   headerTitle: {
     fontSize: 20,

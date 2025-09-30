@@ -23,7 +23,7 @@ export default function RoleSelection({ navigation }) {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           activeOpacity={0.7}
         >
-            <Icon name="arrow-back" size={20} color="#000" />
+            <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
       </View>
 
@@ -151,5 +151,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButtonText: {
+    color: '#000',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });
