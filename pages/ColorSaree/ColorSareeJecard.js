@@ -4,8 +4,11 @@ import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system/legacy';
 // Removed notifications to avoid Expo Go push limitations
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../../contexts/UserContext';
+import jecardFirebaseUtils from '../../utils/firebaseJecard';
 
 export default function ColorSareeJecard({ navigation }) {
+  const { userData } = useUser();
   const [rows, setRows] = useState([]);
   const [doneRows, setDoneRows] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -18,9 +21,33 @@ export default function ColorSareeJecard({ navigation }) {
   // selection mode removed
   const [showChallan, setShowChallan] = useState(false);
   const [selectedIds, setSelectedIds] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    loadData();
+  }, [userData]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
+      
+      // Load data from Firebase with AsyncStorage fallback
+      const [pendingRows, doneRowsData] = await Promise.all([
+        jecardFirebaseUtils.loadPendingRows(tenantId),
+        jecardFirebaseUtils.loadDoneRows(tenantId)
+      ]);
+      
+      setRows(pendingRows);
+      setDoneRows(doneRowsData);
+      
+      // If no data in Firebase, try to sync existing AsyncStorage data
+      if (pendingRows.length === 0 && doneRowsData.length === 0) {
+        await jecardFirebaseUtils.syncAllDataToFirebase(tenantId);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      // Fallback to AsyncStorage only
       try {
         const raw = await AsyncStorage.getItem('jecard_color_rows');
         setRows(raw ? JSON.parse(raw) : []);
@@ -30,8 +57,10 @@ export default function ColorSareeJecard({ navigation }) {
         setRows([]);
         setDoneRows([]);
       }
-    })();
-  }, []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Auto-calc Mtr based on saved blouse selection for this P.O/Design
   useEffect(() => {
@@ -40,6 +69,23 @@ export default function ColorSareeJecard({ navigation }) {
     const num = Number((pieceVal || '').trim() === '' ? 0 : pieceVal) || 0;
     setMtrVal(pieceVal === '' ? '' : String(num * factor));
   }, [pieceVal, selectedRow, showPreview]);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack?.()}>
+            <Text style={styles.backText}>{'<'}</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Color Saree - Jecard</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={[styles.body, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: '#fff', fontSize: 16 }}>Loading data...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -186,22 +232,33 @@ export default function ColorSareeJecard({ navigation }) {
                 style={{ marginTop: 16, backgroundColor: '#FF6B35', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ff5722' }}
                 onPress={async () => {
                   try {
+                    const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
                     const pendingKey = 'jecard_color_rows';
                     const doneKey = 'jecard_color_done_rows';
                     const buttaKey = 'butta_color_rows';
 
+                    // Get current data
                     const pendingRaw = await AsyncStorage.getItem(pendingKey);
                     const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
                     const nextPending = pending.filter((x) => !(String(x.poNo) === String(selectedRow.poNo) && String(x.designNo) === String(selectedRow.designNo)));
-                    await AsyncStorage.setItem(pendingKey, JSON.stringify(nextPending));
 
                     const enriched = { ...selectedRow, clientName, chalanNo, piece: pieceVal, mtr: mtrVal };
 
                     const doneRaw = await AsyncStorage.getItem(doneKey);
                     const doneList = doneRaw ? JSON.parse(doneRaw) : [];
                     const nextDone = [...doneList, enriched];
+
+                    // Update AsyncStorage
+                    await AsyncStorage.setItem(pendingKey, JSON.stringify(nextPending));
                     await AsyncStorage.setItem(doneKey, JSON.stringify(nextDone));
 
+                    // Save to Firebase
+                    await Promise.all([
+                      jecardFirebaseUtils.savePendingRows(nextPending, tenantId),
+                      jecardFirebaseUtils.saveDoneRows(nextDone, tenantId)
+                    ]);
+
+                    // Update butta data
                     const buttaRaw = await AsyncStorage.getItem(buttaKey);
                     const butta = buttaRaw ? JSON.parse(buttaRaw) : [];
                     await AsyncStorage.setItem(buttaKey, JSON.stringify([...butta, {
@@ -219,7 +276,10 @@ export default function ColorSareeJecard({ navigation }) {
                     setSelectedRow(null);
                     setActiveTab('done');
                     navigation?.navigate?.('ColorSareeButtaCutting');
-                  } catch {}
+                  } catch (error) {
+                    console.error('Error saving data:', error);
+                    Alert.alert('Error', 'Failed to save data. Please try again.');
+                  }
                 }}
               >
                 <Text style={{ color: '#fff', fontWeight: '800' }}>Send</Text>
@@ -258,13 +318,15 @@ export default function ColorSareeJecard({ navigation }) {
             <TouchableOpacity style={[styles.downloadBtn, { marginTop: 14 }]} activeOpacity={0.9} onPress={async () => {
               const picked = (doneRows || []).filter((r, idx) => selectedIds[`${r.poNo}-${r.designNo}-${idx}`]);
               try {
+                const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
                 const html = buildChallanHtmlFromSelection(picked);
-                const nextNo = await getNextChallanNumber();
+                const nextNo = await jecardFirebaseUtils.getNextChallanNumber(tenantId);
                 const filename = `DC - ${String(nextNo)}.pdf`;
                 const savedPath = await savePdfToDownloads(html, filename);
                 Alert.alert('Download complete', 'PDF saved to Downloads');
                 // Notification removed for Expo Go compatibility
               } catch (e) {
+                console.error('PDF generation error:', e);
                 Alert.alert('PDF', 'Could not save PDF. Please install expo-print and restart (reset cache).');
               }
               setShowChallan(false);
@@ -413,90 +475,309 @@ function buildChallanHtmlFromSelection(rows) {
     }
   } catch { dateStr = ''; }
 
-  const filled = (rows || []).map((r) => {
-    const po = r.poNo ?? '';
-    const dn = r.designNo ?? '';
-    const pc = (r.piece ?? r.qty ?? '').toString();
-    const mtr = (r.mtr ?? '').toString();
-    const tp = (r.tp ?? '').toString();
+  // Calculate totals
+  let totalPiece = 0;
+  let totalMtr = 0;
+  let totalTakka = 0;
+
+  // Build table rows with data
+  const tableRows = (rows || []).map((r) => {
+    const po = r?.poNo ?? '';
+    const dn = r?.designNo ?? '';
+    const pc = Number(r?.piece ?? r?.qty ?? 0) || 0;
+    const mtr = Number(r?.mtr ?? 0) || 0;
+    const takka = Number(r?.takka ?? 0) || 0;
+    
+    totalPiece += pc;
+    totalMtr += mtr;
+    totalTakka += takka;
+    
     return `
-      <tr>
-        <td style="border:2px solid #000;padding:6px;">${po}</td>
-        <td style="border:2px solid #000;padding:6px;">${dn}</td>
-        <td style="border:2px solid #000;padding:6px;">${pc}</td>
-        <td style="border:2px solid #000;padding:6px;">${mtr}</td>
-        <td style="border:2px solid #000;padding:6px;">${tp}</td>
-      </tr>`;
+      <div class="table-row">
+        <div class="table-cell po-no">${po}</div>
+        <div class="table-cell design-no">${dn}</div>
+        <div class="table-cell takka">${takka}</div>
+        <div class="table-cell piece">${pc}</div>
+        <div class="table-cell mtr">${mtr}</div>
+      </div>`;
   }).join('');
 
-  const html = `<!DOCTYPE html><html><head><meta charset='utf-8'/>
-  <style>
-    body{ font-family: Arial, Helvetica, sans-serif; }
-    .sheet{ width: 794px; height: 1123px; margin: 0 auto; border: 4px solid #000; padding: 10px; box-sizing: border-box; }
-    .title{ text-align:center; font-size:24px; font-weight:700; border-bottom:4px solid #000; padding:8px 0; }
-    .line{ border-bottom:4px solid #000; height:0; margin-bottom:12px; }
-    .gst{ font-size:20px; font-weight:700; padding:10px 0; border-bottom:4px solid #000; }
-    .meta{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:4px solid #000; }
-    table{ width:100%; border-collapse:collapse; }
-    th{ text-align:left; border:2px solid #000; padding:6px; }
-    .rows{ border-top:4px solid #000; }
-    .sign{ display:flex; justify-content:space-between; margin-top:40px; border-top:4px solid #000; padding-top:30px; }
-  </style></head>
-  <body>
-    <div class='sheet'>
-      <div class='title'>Delivery Challan</div>
-      <div class='line'></div>
-      <div class='gst'>GST No :</div>
-      <div class='meta'>
-        <div>
-          <div>Challan No : <strong>${challanNo}</strong></div>
-          <div>Client Name : <strong>${clientName}</strong></div>
+  // Add empty rows to fill up to 7 rows total
+  const emptyRows = [];
+  const totalRows = Math.max(7, (rows || []).length);
+  for (let i = (rows || []).length; i < totalRows; i++) {
+    emptyRows.push(`
+      <div class="table-row">
+        <div class="table-cell po-no"></div>
+        <div class="table-cell design-no"></div>
+        <div class="table-cell takka"></div>
+        <div class="table-cell piece"></div>
+        <div class="table-cell mtr"></div>
+      </div>`);
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Challan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .challan-container {
+            background-color: white;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 3px solid black;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background-color: white;
+            text-align: center;
+            padding: 15px;
+            border-bottom: 3px solid black;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .info-section {
+            display: flex;
+            border-bottom: 3px solid black;
+        }
+        
+        .info-left, .info-right {
+            flex: 1;
+            padding: 40px 15px 15px 15px;
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        .info-item {
+            margin-bottom: 0;
+            margin-top: 40px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .client-section {
+            display: flex;
+            border-bottom: 3px solid black;
+        }
+        
+        .client-left, .client-right {
+            flex: 1;
+            padding: 20px 15px;
+        }
+        
+        .client-left {
+            border-right: 1px solid black;
+        }
+        
+        .client-left .info-item {
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+        
+        .client-right .info-item {
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+        
+        .table-section {
+            border-bottom: 3px solid black;
+        }
+        
+        .table-header {
+            display: flex;
+            background-color: white;
+            border-bottom: 2px solid black;
+        }
+        
+        .table-header div {
+            padding: 15px 10px;
+            font-weight: bold;
+            text-align: center;
+            border-right: 2px solid black;
+            font-size: 14px;
+        }
+        
+        .table-header div:last-child {
+            border-right: none;
+        }
+        
+        .po-no {
+            flex: 1;
+        }
+        
+        .design-no {
+            flex: 1;
+        }
+        
+        .takka {
+            flex: 1;
+        }
+        
+        .piece {
+            flex: 1;
+        }
+        
+        .mtr {
+            flex: 1;
+        }
+        
+        .table-body {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .table-row {
+            display: flex;
+            min-height: 50px;
+            flex: 1;
+        }
+        
+        .table-cell {
+            border-right: 2px solid black;
+            padding: 10px;
+        }
+        
+        .table-cell:last-child {
+            border-right: none;
+        }
+        
+        .total-row {
+            display: flex;
+            border-top: 2px solid black;
+            background-color: #f9f9f9;
+        }
+        
+        .total-row div {
+            padding: 15px 10px;
+            font-weight: bold;
+            text-align: left;
+            border-right: 2px solid black;
+        }
+        
+        .total-row div:last-child {
+            border-right: none;
+        }
+        
+        .signature-section {
+            display: flex;
+            padding: 40px 15px;
+            justify-content: space-between;
+        }
+        
+        .signature-left {
+            flex: 0 0 30%;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .signature-right {
+            flex: 0 0 40%;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: left;
+            margin-left: auto;
+            padding-left: 60px;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            
+            .challan-container {
+                box-shadow: none;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="challan-container">
+        <!-- Header -->
+        <div class="header">
+            Delivery Challan
         </div>
-        <div style='align-self:flex-start;'>Date : <strong>${dateStr}</strong></div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>P.O. No</th>
-            <th>Design No</th>
-            <th>Piece</th>
-            <th>Mtr</th>
-            <th>TP</th>
-          </tr>
-        </thead>
-      </table>
-      <table class='rows'>${filled}</table>
-      <div class='sign'>
-        <div>Receiver's Signature</div>
-        <div>Signature</div>
-      </div>
+        
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-left">
+                <div class="info-item">GST NO :</div>
+            </div>
+            <div class="info-right">
+                <div class="info-item">Phone No :</div>
+            </div>
+        </div>
+        
+        <!-- Client Section -->
+        <div class="client-section">
+            <div class="client-left">
+                <div class="info-item">Client Name : ${clientName}</div>
+                <div class="info-item">Address :</div>
+            </div>
+            <div class="client-right">
+                <div class="info-item">Challan No : ${challanNo}</div>
+                <div class="info-item">Date : ${dateStr}</div>
+            </div>
+        </div>
+        
+        <!-- Table Section -->
+        <div class="table-section">
+            <!-- Table Header -->
+            <div class="table-header">
+                <div class="po-no">P.O No</div>
+                <div class="design-no">Design No</div>
+                <div class="takka">Takka</div>
+                <div class="piece">Piece</div>
+                <div class="mtr">Mtr</div>
+            </div>
+            
+            <!-- Table Body -->
+            <div class="table-body">
+                ${tableRows}
+                ${emptyRows.join('')}
+            </div>
+            
+            <!-- Total Row -->
+            <div class="total-row">
+                <div class="po-no"></div>
+                <div class="design-no"></div>
+                <div class="takka">Total: ${totalTakka}</div>
+                <div class="piece">Total: ${totalPiece}</div>
+                <div class="mtr">Total: ${totalMtr}</div>
+            </div>
+        </div>
+        
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-left">Receiver Signature</div>
+            <div class="signature-right">Signature</div>
+        </div>
     </div>
-  </body></html>`;
+</body>
+</html>`;
   return html;
 }
 
-// Auto-incrementing challan number stored locally
-async function getNextChallanNumber() {
-  const key = 'challan_counter_global';
-  try {
-    // In-memory cache to avoid race conditions within same session
-    const cached = (globalThis.__challanCounter || 0);
-    let stored = 0;
-    try {
-      const raw = await AsyncStorage.getItem(key);
-      stored = Math.max(0, parseInt(raw || '0', 10) || 0);
-    } catch {}
-    const current = Math.max(cached, stored);
-    const next = current + 1;
-    globalThis.__challanCounter = next;
-    await AsyncStorage.setItem(key, String(next));
-    return next;
-  } catch {
-    const fallback = Math.floor(Date.now() / 1000) % 100000;
-    globalThis.__challanCounter = fallback;
-    return fallback;
-  }
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#222222' },
