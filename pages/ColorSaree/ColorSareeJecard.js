@@ -322,18 +322,28 @@ export default function ColorSareeJecard({ navigation }) {
             <ScrollView style={{ maxHeight: 420 }}>
               <View style={{ marginTop: 4 }}>
                 <Text style={[styles.inputLabel, { marginBottom: 6 }]}>Select designs from done data</Text>
-                {(doneRows || []).filter(r => !r.pdfDownloaded).map((r, idx) => {
-                  const key = `${r.poNo}-${r.designNo}-${idx}`;
-                  const checked = !!selectedIds[key];
-                  return (
-                    <TouchableOpacity key={key} style={styles.selectRow} activeOpacity={0.8} onPress={() => setSelectedIds((m)=>({ ...m, [key]: !checked }))}>
-                      <View style={[styles.checkbox, checked && styles.checkboxOn]}>
-                        {checked && <Text style={styles.checkMark}>✓</Text>}
-                      </View>
-                      <Text style={styles.selectText}>PO {String(r.poNo)} • D.NO {String(r.designNo)} • Piece {String(r.piece || r.qty || '-')} • Mtr {String(r.mtr || '-')}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {(doneRows || []).filter(r => !r.pdfDownloaded).length === 0 ? (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={{ color: '#999', fontSize: 14, textAlign: 'center' }}>
+                      {doneRows.length === 0 
+                        ? 'No items in done data yet.\nSend items from pending data first.' 
+                        : 'All items have been downloaded.\nNo new items available.'}
+                    </Text>
+                  </View>
+                ) : (
+                  (doneRows || []).filter(r => !r.pdfDownloaded).map((r, idx) => {
+                    const key = `${r.poNo}-${r.designNo}-${idx}`;
+                    const checked = !!selectedIds[key];
+                    return (
+                      <TouchableOpacity key={key} style={styles.selectRow} activeOpacity={0.8} onPress={() => setSelectedIds((m)=>({ ...m, [key]: !checked }))}>
+                        <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+                          {checked && <Text style={styles.checkMark}>✓</Text>}
+                        </View>
+                        <Text style={styles.selectText}>PO {String(r.poNo)} • D.NO {String(r.designNo)} • Piece {String(r.piece || r.qty || '-')} • Mtr {String(r.mtr || '-')}</Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
               </View>
             </ScrollView>
 
@@ -351,12 +361,12 @@ export default function ColorSareeJecard({ navigation }) {
                 const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
                 const html = buildChallanHtmlFromSelection(picked);
                 
-                // Get next Butta counter
-                const buttaCounterRef = await AsyncStorage.getItem('butta_challan_counter');
+                // Get next Color Butta counter
+                const buttaCounterRef = await AsyncStorage.getItem('butta_challan_counter_color');
                 const nextNo = buttaCounterRef ? parseInt(buttaCounterRef) + 1 : 1;
-                await AsyncStorage.setItem('butta_challan_counter', String(nextNo));
+                await AsyncStorage.setItem('butta_challan_counter_color', String(nextNo));
                 
-                const filename = `Butta - ${String(nextNo)}.pdf`;
+                const filename = `C Butta - ${String(nextNo)}.pdf`;
                 const savedPath = await savePdfToDownloads(html, filename);
                 
                 // Mark selected rows as PDF downloaded (match by poNo and designNo)

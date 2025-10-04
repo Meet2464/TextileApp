@@ -561,6 +561,144 @@ export const jecardFirebaseUtils = {
         return localData ? JSON.parse(localData) : [];
       } catch { return []; }
     }
+  },
+
+  // ===== White Saree Bleach Workflow =====
+  
+  // Save White Bleach rows to Firebase
+  saveBleachWhiteRows: async (rows, tenantId = 'default') => {
+    try {
+      const bleachRef = doc(db, 'tenants', tenantId, 'workflow', 'bleach_white');
+      await setDoc(bleachRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'bleach_white'
+      });
+      
+      await AsyncStorage.setItem('bleach_white_rows', JSON.stringify(rows));
+      console.log('White bleach rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving white bleach rows to Firebase:', error);
+      await AsyncStorage.setItem('bleach_white_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Load White Bleach rows from Firebase
+  loadBleachWhiteRows: async (tenantId = 'default') => {
+    try {
+      const bleachRef = doc(db, 'tenants', tenantId, 'workflow', 'bleach_white');
+      const bleachSnap = await getDoc(bleachRef);
+      
+      if (bleachSnap.exists()) {
+        const rows = bleachSnap.data().rows || [];
+        await AsyncStorage.setItem('bleach_white_rows', JSON.stringify(rows));
+        console.log('White bleach rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('bleach_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading white bleach rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('bleach_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== White Saree Finish Workflow =====
+  
+  // Save White Finish rows to Firebase
+  saveFinishWhiteRows: async (rows, tenantId = 'default') => {
+    try {
+      const finishRef = doc(db, 'tenants', tenantId, 'workflow', 'finish_white');
+      await setDoc(finishRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'finish_white'
+      });
+      
+      await AsyncStorage.setItem('finish_white_rows', JSON.stringify(rows));
+      console.log('White finish rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving white finish rows to Firebase:', error);
+      await AsyncStorage.setItem('finish_white_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Load White Finish rows from Firebase
+  loadFinishWhiteRows: async (tenantId = 'default') => {
+    try {
+      const finishRef = doc(db, 'tenants', tenantId, 'workflow', 'finish_white');
+      const finishSnap = await getDoc(finishRef);
+      
+      if (finishSnap.exists()) {
+        const rows = finishSnap.data().rows || [];
+        await AsyncStorage.setItem('finish_white_rows', JSON.stringify(rows));
+        console.log('White finish rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('finish_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading white finish rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('finish_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== White Saree Delivery Workflow =====
+  
+  // Save White Delivery rows to Firebase
+  saveDeliveryWhiteRows: async (rows, tenantId = 'default') => {
+    try {
+      const deliveryRef = doc(db, 'tenants', tenantId, 'workflow', 'delivery_white');
+      await setDoc(deliveryRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'delivery_white'
+      });
+      
+      await AsyncStorage.setItem('delivery_white_rows', JSON.stringify(rows));
+      console.log('White delivery rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving white delivery rows to Firebase:', error);
+      await AsyncStorage.setItem('delivery_white_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Load White Delivery rows from Firebase
+  loadDeliveryWhiteRows: async (tenantId = 'default') => {
+    try {
+      const deliveryRef = doc(db, 'tenants', tenantId, 'workflow', 'delivery_white');
+      const deliverySnap = await getDoc(deliveryRef);
+      
+      if (deliverySnap.exists()) {
+        const rows = deliverySnap.data().rows || [];
+        await AsyncStorage.setItem('delivery_white_rows', JSON.stringify(rows));
+        console.log('White delivery rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('delivery_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading white delivery rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('delivery_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
   }
 };
 

@@ -19,7 +19,6 @@ import ColorSareeDelivery from './pages/ColorSaree/ColorSareeDelivery';
 import WhiteSareeJecard from './pages/WhiteSaree/WhiteSareeJecard';
 import WhiteSareeButtaCutting from './pages/WhiteSaree/WhiteSareeButtaCutting';
 import WhiteSareeBleach from './pages/WhiteSaree/WhiteSareeBleach';
-import WhiteSareeFinish from './pages/WhiteSaree/WhiteSareeFinish';
 import WhiteSareeDelivery from './pages/WhiteSaree/WhiteSareeDelivery';
 
 const { width, height } = Dimensions.get('window');
@@ -38,7 +37,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
   const [showWhiteJecard, setShowWhiteJecard] = useState(false);
   const [showWhiteButtaCutting, setShowWhiteButtaCutting] = useState(false);
   const [showWhiteBleach, setShowWhiteBleach] = useState(false);
-  const [showWhiteFinish, setShowWhiteFinish] = useState(false);
   const [showWhiteDelivery, setShowWhiteDelivery] = useState(false);
   const [showGarmentEmbroidery, setShowGarmentEmbroidery] = useState(false);
   const [showGarmentButtaCutting, setShowGarmentButtaCutting] = useState(false);
@@ -100,9 +98,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
           break;
         case 'bleach':
           setShowWhiteBleach(true);
-          break;
-        case 'finish':
-          setShowWhiteFinish(true);
           break;
         case 'delivery':
           setShowWhiteDelivery(true);
@@ -170,14 +165,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
       />
     );
   }
-  if (showWhiteFinish) {
-    return (
-      <WhiteSareeFinish
-        navigation={{ goBack: () => setShowWhiteFinish(false) }}
-        orderData={orderData}
-      />
-    );
-  }
   if (showWhiteDelivery) {
     return (
       <WhiteSareeDelivery
@@ -207,13 +194,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
       title: 'BLEACH',
       icon: 'water',
       iconColor: '#00BFFF',
-      fullWidth: false,
-    },
-    {
-      id: 'finish',
-      title: 'FINISH',
-      icon: 'checkmark-circle',
-      iconColor: '#FFD700',
       fullWidth: false,
     },
     {

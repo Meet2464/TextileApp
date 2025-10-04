@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system/legacy';
 // Removed notifications to avoid Expo Go push limitations
@@ -271,18 +271,28 @@ export default function WhiteSareeJecard({ navigation }) {
             <ScrollView style={{ maxHeight: 420 }}>
               <View style={{ marginTop: 4 }}>
                 <Text style={[styles.inputLabel, { marginBottom: 6 }]}>Select designs from done data</Text>
-                {(doneRows || []).filter(r => !r.pdfDownloaded).map((r, idx) => {
-                  const key = `${r.poNo}-${r.designNo}-${idx}`;
-                  const checked = !!selectedIds[key];
-                  return (
-                    <TouchableOpacity key={key} style={styles.selectRow} activeOpacity={0.8} onPress={() => setSelectedIds((m)=>({ ...m, [key]: !checked }))}>
-                      <View style={[styles.checkbox, checked && styles.checkboxOn]}>
-                        {checked && <Text style={styles.checkMark}>✓</Text>}
-                      </View>
-                      <Text style={styles.selectText}>PO {String(r.poNo)} • D.NO {String(r.designNo)} • Piece {String(r.piece || r.qty || '-')} • Mtr {String(r.mtr || '-')}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {(doneRows || []).filter(r => !r.pdfDownloaded).length === 0 ? (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={{ color: '#999', fontSize: 14, textAlign: 'center' }}>
+                      {doneRows.length === 0 
+                        ? 'No items in done data yet.\nSend items from pending data first.' 
+                        : 'All items have been downloaded.\nNo new items available.'}
+                    </Text>
+                  </View>
+                ) : (
+                  (doneRows || []).filter(r => !r.pdfDownloaded).map((r, idx) => {
+                    const key = `${r.poNo}-${r.designNo}-${idx}`;
+                    const checked = !!selectedIds[key];
+                    return (
+                      <TouchableOpacity key={key} style={styles.selectRow} activeOpacity={0.8} onPress={() => setSelectedIds((m)=>({ ...m, [key]: !checked }))}>
+                        <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+                          {checked && <Text style={styles.checkMark}>✓</Text>}
+                        </View>
+                        <Text style={styles.selectText}>PO {String(r.poNo)} • D.NO {String(r.designNo)} • Piece {String(r.piece || r.qty || '-')} • Mtr {String(r.mtr || '-')}</Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
               </View>
             </ScrollView>
 
@@ -300,12 +310,12 @@ export default function WhiteSareeJecard({ navigation }) {
                 const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
                 const html = buildChallanHtmlImageLike(picked);
                 
-                // Get next Butta counter
+                // Get next White Butta counter
                 const buttaCounterRef = await AsyncStorage.getItem('butta_challan_counter_white');
                 const nextNo = buttaCounterRef ? parseInt(buttaCounterRef) + 1 : 1;
                 await AsyncStorage.setItem('butta_challan_counter_white', String(nextNo));
                 
-                const filename = `Butta - ${String(nextNo)}.pdf`;
+                const filename = `W Butta - ${String(nextNo)}.pdf`;
                 const savedPath = await savePdfToDownloads(html, filename);
                 
                 // Mark selected rows as PDF downloaded (match by poNo and designNo)
@@ -339,8 +349,8 @@ export default function WhiteSareeJecard({ navigation }) {
   );
 }
 
-async function savePdfToDownloads(html) {
-  const filename = `DeliveryChallan-${Date.now()}.pdf`;
+async function savePdfToDownloads(html, filename) {
+  const finalFilename = filename || `DeliveryChallan-${Date.now()}.pdf`;
   const { uri } = await Print.printToFileAsync({ html });
   if (Platform.OS === 'android' && FileSystem.StorageAccessFramework) {
     try {
@@ -349,7 +359,7 @@ async function savePdfToDownloads(html) {
         const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
         const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
           permissions.directoryUri,
-          filename,
+          finalFilename,
           'application/pdf'
         );
         await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
@@ -357,65 +367,351 @@ async function savePdfToDownloads(html) {
       }
     } catch (e) {}
   }
-  const dest = FileSystem.documentDirectory + filename;
+  const dest = FileSystem.documentDirectory + finalFilename;
   await FileSystem.copyAsync({ from: uri, to: dest });
   return dest;
 }
 
 function buildChallanHtmlImageLike(rows) {
-  const rowHtml = (rows || []).map(() => `
-    <tr>
-      <td style=\"border:2px solid #000;height:28px;\">&nbsp;</td>
-      <td style=\"border:2px solid #000;height:28px;\">&nbsp;</td>
-      <td style=\"border:2px solid #000;height:28px;\">&nbsp;</td>
-      <td style=\"border:2px solid #000;height:28px;\">&nbsp;</td>
-      <td style=\"border:2px solid #000;height:28px;\">&nbsp;</td>
-    </tr>`).join('');
+  // Get first row for client info
+  const first = rows && rows[0] ? rows[0] : {};
+  const clientName = String(first.clientName || first.partyName || '').trim();
+  const challanNo = String(first.chalanNo || first.challanNo || '').trim();
+  const rawDate = first.date || first.createdAt || first.dateStr || first.orderDate || '';
+  let dateStr = '';
+  try {
+    if (rawDate) {
+      const parsed = Date.parse(rawDate);
+      dateStr = isNaN(parsed) ? String(rawDate) : new Date(parsed).toLocaleDateString();
+    }
+  } catch { dateStr = ''; }
 
-  const html = `<!DOCTYPE html><html><head><meta charset='utf-8'/>
-  <style>
-    body{ font-family: Arial, Helvetica, sans-serif; }
-    .sheet{ width: 794px; height: 1123px; margin: 0 auto; border: 4px solid #000; padding: 10px; box-sizing: border-box; }
-    .title{ text-align:center; font-size:24px; font-weight:700; border-bottom:4px solid #000; padding:8px 0; }
-    .box{ border-bottom:4px solid #000; height:140px; }
-    .gst{ font-size:20px; font-weight:700; padding:16px; border-bottom:4px solid #000; }
-    .meta{ display:flex; justify-content:space-between; padding:16px; border-bottom:4px solid #000; }
-    table{ width:100%; border-collapse:collapse; }
-    th{ text-align:left; border:2px solid #000; padding:6px; }
-    .rows{ border-top:4px solid #000; }
-    .sign{ display:flex; justify-content:space-between; margin-top:60px; border-top:4px solid #000; padding-top:40px; }
-  </style></head>
-  <body>
-    <div class='sheet'>
-      <div class='title'>Delivery Challan</div>
-      <div class='box'></div>
-      <div class='gst'>GST No :</div>
-      <div class='meta'>
-        <div>
-          <div>Challan No :</div>
-          <div>Client Name :</div>
-          <div>Add</div>
+  // Calculate totals
+  let totalPiece = 0;
+  let totalMtr = 0;
+  let totalTakka = 0;
+
+  // Build table rows with actual data
+  const dataRows = (rows || []).map((r) => {
+    const po = r?.poNo ?? '';
+    const dn = r?.designNo ?? '';
+    const pc = Number(r?.piece ?? r?.qty ?? 0) || 0;
+    const mtr = Number(r?.mtr ?? 0) || 0;
+    const takka = Number(r?.takka ?? 0) || 0;
+    
+    totalPiece += pc;
+    totalMtr += mtr;
+    totalTakka += takka;
+    
+    return `
+                <div class="table-row">
+                    <div class="table-cell po-no">${po}</div>
+                    <div class="table-cell design-no">${dn}</div>
+                    <div class="table-cell takka">${takka}</div>
+                    <div class="table-cell piece">${pc}</div>
+                    <div class="table-cell mtr">${mtr}</div>
+                </div>`;
+  }).join('');
+
+  // Add empty rows to fill up to 7 rows total
+  const emptyRows = [];
+  const totalRows = 7;
+  for (let i = (rows || []).length; i < totalRows; i++) {
+    emptyRows.push(`
+                <div class="table-row">
+                    <div class="table-cell po-no"></div>
+                    <div class="table-cell design-no"></div>
+                    <div class="table-cell takka"></div>
+                    <div class="table-cell piece"></div>
+                    <div class="table-cell mtr"></div>
+                </div>`);
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Challan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .challan-container {
+            background-color: white;
+            width: 125mm;
+            height: 170mm;
+            margin: 0 auto;
+            border: 3px solid black;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background-color: white;
+            text-align: center;
+            padding: 0;
+            height: 0.6cm;
+            border-bottom: 3px solid black;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .info-section {
+            display: flex;
+            border-bottom: 3px solid black;
+            height: 1in;
+        }
+
+        .info-left, .info-right {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .info-item {
+            margin-bottom: 0;
+            margin-top: 0;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .client-section {
+            display: flex;
+            border-bottom: 3px solid black;
+            height: 1in;
+        }
+
+        .client-left, .client-right {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .client-left {
+            border-right: 1px solid black;
+        }
+
+        .client-left .info-item {
+            margin-bottom: 8px;
+            margin-top: 0;
+            font-size: 12px;
+        }
+
+        .client-right .info-item {
+            margin-bottom: 8px;
+            margin-top: 0;
+            font-size: 12px;
+        }
+        
+        .table-section {
+            height: 3.3in;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 2px solid black;
+        }
+        
+        .table-header {
+            display: flex;
+            background-color: white;
+            border-bottom: 2px solid black;
+        }
+        
+        .table-header div {
+            padding: 8px 6px;
+            font-weight: bold;
+            text-align: center;
+            border-right: 2px solid black;
+            font-size: 12px;
+        }
+        
+        .table-header div:last-child {
+            border-right: none;
+        }
+        
+        .po-no {
+            flex: 1;
+        }
+        
+        .design-no {
+            flex: 1;
+        }
+        
+        .takka {
+            flex: 1;
+        }
+        
+        .piece {
+            flex: 1;
+        }
+        
+        .mtr {
+            flex: 1;
+        }
+        
+        .table-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .table-row {
+            display: flex;
+            min-height: 45px;
+            flex: 1;
+        }
+        
+        .table-cell {
+            border-right: 2px solid black;
+            padding: 5px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .table-row:last-child .table-cell {
+            border-bottom: 2px solid black;
+        }
+        
+        .total-row {
+            display: flex;
+            background-color: white;
+            height: 0.2in;
+        }
+        
+        .total-row div {
+            padding: 1px 6px;
+            font-weight: bold;
+            text-align: center;
+            border-right: 1px solid black;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .total-row div:last-child {
+            border-right: none;
+        }
+        
+        .signature-section {
+            display: flex;
+            padding: 10px 10px 10px 15px;
+            justify-content: space-between;
+            align-items: center;
+            height: 0.8in;
+            flex: 1;
+        }
+        
+        .signature-left {
+            flex: 0 0 30%;
+            font-weight: bold;
+            font-size: 12px;
+            border-right: 2px solid black;
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+
+        .signature-right {
+            flex: 0 0 40%;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: left;
+            margin-left: auto;
+            padding-left: 50px;
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            
+            .challan-container {
+                box-shadow: none;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="challan-container">
+        <!-- Header -->
+        <div class="header">
+            Delivery Challan
         </div>
-        <div style='align-self:flex-start;'>Date :</div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>P.O. No</th>
-            <th>Design No</th>
-            <th>Piece</th>
-            <th>Mtr</th>
-            <th>TP</th>
-          </tr>
-        </thead>
-      </table>
-      <table class='rows'>${rowHtml}</table>
-      <div class='sign'>
-        <div>Receiver's Signature</div>
-        <div>Signature</div>
-      </div>
+        
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-left">
+                <div class="info-item">GST NO :</div>
+            </div>
+            <div class="info-right">
+                <div class="info-item">Phone No :</div>
+            </div>
+        </div>
+        
+        <!-- Client Section -->
+        <div class="client-section">
+            <div class="client-left">
+                <div class="info-item">Client Name : ${clientName}</div>
+                <div class="info-item">Address :</div>
+            </div>
+            <div class="client-right">
+                <div class="info-item">Challan No : ${challanNo}</div>
+                <div class="info-item">Date : ${dateStr}</div>
+            </div>
+        </div>
+        
+        <!-- Table Section -->
+        <div class="table-section">
+            <!-- Table Header -->
+            <div class="table-header">
+                <div class="po-no">P.O No</div>
+                <div class="design-no">Design No</div>
+                <div class="takka">Takka</div>
+                <div class="piece">Piece</div>
+                <div class="mtr">Mtr</div>
+            </div>
+            
+            <!-- Table Body -->
+            <div class="table-body">
+${dataRows}${emptyRows.join('')}
+            </div>
+        </div>
+        
+        <!-- Total Row -->
+        <div class="total-row">
+            <div class="po-no"></div>
+            <div class="design-no"></div>
+            <div class="takka">${totalTakka}</div>
+            <div class="piece">${totalPiece}</div>
+            <div class="mtr">${totalMtr}</div>
+        </div>
+        
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-left">Reciever Signature</div>
+            <div class="signature-right">Signature</div>
+        </div>
     </div>
-  </body></html>`;
+</body>
+</html>`;
   return html;
 }
 
