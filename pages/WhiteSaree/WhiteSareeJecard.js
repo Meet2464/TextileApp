@@ -4,8 +4,11 @@ import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system/legacy';
 // Removed notifications to avoid Expo Go push limitations
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../../contexts/UserContext';
+import jecardFirebaseUtils from '../../utils/firebaseJecard';
 
 export default function WhiteSareeJecard({ navigation }) {
+  const { userData } = useUser();
   const [rows, setRows] = useState([]);
   const [doneRows, setDoneRows] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -22,16 +25,17 @@ export default function WhiteSareeJecard({ navigation }) {
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem('jecard_white_rows');
-        setRows(raw ? JSON.parse(raw) : []);
-        const doneRaw = await AsyncStorage.getItem('jecard_white_done_rows');
-        setDoneRows(doneRaw ? JSON.parse(doneRaw) : []);
+        const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
+        const pending = await jecardFirebaseUtils.loadWhiteJecardRows(tenantId);
+        setRows(pending);
+        const done = await jecardFirebaseUtils.loadWhiteJecardDoneRows(tenantId);
+        setDoneRows(done);
       } catch {
         setRows([]);
         setDoneRows([]);
       }
     })();
-  }, []);
+  }, [userData]);
 
   // Auto-calc Mtr based on saved blouse selection for this P.O/Design
   useEffect(() => {
@@ -57,10 +61,28 @@ export default function WhiteSareeJecard({ navigation }) {
             <Text style={styles.headerCell}>D.NO</Text>
             <Text style={styles.headerCell}>PIECE</Text>
             <Text style={styles.headerCell}>MTR</Text>
-            <Text style={styles.headerCell}>{activeTab === 'pending' ? 'SEND' : 'PREVIEW'}</Text>
+            <Text style={styles.headerCell}>{activeTab === 'pending' ? 'SEND' : 'STATUS'}</Text>
           </View>
           {(activeTab === 'pending' ? rows : doneRows).map((r, idx) => (
-            <View key={`row-${idx}`} style={styles.tableRow}>
+            <TouchableOpacity 
+              key={`row-${idx}`} 
+              style={styles.tableRow}
+              onPress={() => {
+                if (activeTab === 'done') {
+                  setSelectedRow(r);
+                  setShowPreview(true);
+                } else {
+                  setSelectedRow(r);
+                  setClientName('');
+                  setChalanNo('');
+                  setPieceVal('');
+                  setMtrVal('');
+                  setShowPreview(true);
+                }
+              }}
+              activeOpacity={activeTab === 'done' ? 0.7 : 1}
+              disabled={activeTab === 'pending'}
+            >
               <Text style={styles.cell}>{String(r.poNo)}</Text>
               <Text style={styles.cell}>{String(r.designNo)}</Text>
               <Text style={styles.cell}>{String(r.piece || r.qty || '-')}</Text>
@@ -72,23 +94,25 @@ export default function WhiteSareeJecard({ navigation }) {
                     setSelectedRow(r);
                     setClientName('');
                     setChalanNo('');
-                  setPieceVal('');
-                  setMtrVal('');
+                    setPieceVal('');
+                    setMtrVal('');
                     setShowPreview(true);
                   }}
                 >
                   <Text style={[styles.cell, { color: '#10B981', fontWeight: '700' }]}>SEND</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={{ flex: 1, alignItems: 'center' }} onPress={() => { setSelectedRow(r); setShowPreview(true); }}>
-                  <Text style={[styles.cell, { color: '#00BFFF', fontWeight: '700' }]}>VIEW</Text>
-                </TouchableOpacity>
+                <View style={{ flex: 1, alignItems: 'center' }}>
+                  <Text style={[styles.cell, { color: r.pdfDownloaded ? '#10B981' : 'transparent', fontWeight: '700' }]}>
+                    {r.pdfDownloaded ? 'Done' : ''}
+                  </Text>
+                </View>
               )}
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {activeTab === 'done' && (
+        {activeTab === 'pending' && (
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.smallTagBtn} onPress={() => setShowChallan(true)}>
               <Text style={styles.smallTagText}>Sending challan</Text>
@@ -182,36 +206,39 @@ export default function WhiteSareeJecard({ navigation }) {
                 </View>
               </View>
 
+              {activeTab === 'pending' && (
               <TouchableOpacity
                 style={{ marginTop: 16, backgroundColor: '#FF6B35', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ff5722' }}
                 onPress={async () => {
                   try {
-                    const pendingKey = 'jecard_white_rows';
-                    const doneKey = 'jecard_white_done_rows';
-                    const buttaKey = 'butta_white_rows';
+                    const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
 
-                    const pendingRaw = await AsyncStorage.getItem(pendingKey);
-                    const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+                    // Load current data from Firebase
+                    const pending = await jecardFirebaseUtils.loadWhiteJecardRows(tenantId);
                     const nextPending = pending.filter((x) => !(String(x.poNo) === String(selectedRow.poNo) && String(x.designNo) === String(selectedRow.designNo)));
-                    await AsyncStorage.setItem(pendingKey, JSON.stringify(nextPending));
 
                     const enriched = { ...selectedRow, clientName, chalanNo, piece: pieceVal, mtr: mtrVal };
 
-                    const doneRaw = await AsyncStorage.getItem(doneKey);
-                    const doneList = doneRaw ? JSON.parse(doneRaw) : [];
+                    const doneList = await jecardFirebaseUtils.loadWhiteJecardDoneRows(tenantId);
                     const nextDone = [...doneList, enriched];
-                    await AsyncStorage.setItem(doneKey, JSON.stringify(nextDone));
 
-                    const buttaRaw = await AsyncStorage.getItem(buttaKey);
-                    const butta = buttaRaw ? JSON.parse(buttaRaw) : [];
-                    await AsyncStorage.setItem(buttaKey, JSON.stringify([...butta, {
+                    // Save to Firebase
+                    await Promise.all([
+                      jecardFirebaseUtils.saveWhiteJecardRows(nextPending, tenantId),
+                      jecardFirebaseUtils.saveWhiteJecardDoneRows(nextDone, tenantId)
+                    ]);
+
+                    // Update butta data and save to Firebase
+                    const butta = await jecardFirebaseUtils.loadButtaWhiteRows(tenantId);
+                    const newButtaRow = {
                       poNo: enriched.poNo,
                       clientName: enriched.clientName || enriched.partyName || '',
                       chalanNo: enriched.chalanNo || '',
                       designNo: enriched.designNo || '',
                       piece: enriched.piece || '',
                       mtr: enriched.mtr || '',
-                    }]));
+                    };
+                    await jecardFirebaseUtils.saveButtaWhiteRows([...butta, newButtaRow], tenantId);
 
                     setRows(nextPending);
                     setDoneRows(nextDone);
@@ -219,11 +246,15 @@ export default function WhiteSareeJecard({ navigation }) {
                     setSelectedRow(null);
                     setActiveTab('done');
                     navigation?.navigate?.('WhiteSareeButtaCutting');
-                  } catch {}
+                  } catch (error) {
+                    console.error('Error saving data:', error);
+                    Alert.alert('Error', 'Failed to save data. Please try again.');
+                  }
                 }}
               >
                 <Text style={{ color: '#fff', fontWeight: '800' }}>Send</Text>
               </TouchableOpacity>
+              )}
             </View>
           </View>
         )}
@@ -240,7 +271,7 @@ export default function WhiteSareeJecard({ navigation }) {
             <ScrollView style={{ maxHeight: 420 }}>
               <View style={{ marginTop: 4 }}>
                 <Text style={[styles.inputLabel, { marginBottom: 6 }]}>Select designs from done data</Text>
-                {(doneRows || []).map((r, idx) => {
+                {(doneRows || []).filter(r => !r.pdfDownloaded).map((r, idx) => {
                   const key = `${r.poNo}-${r.designNo}-${idx}`;
                   const checked = !!selectedIds[key];
                   return (
@@ -256,13 +287,45 @@ export default function WhiteSareeJecard({ navigation }) {
             </ScrollView>
 
             <TouchableOpacity style={[styles.downloadBtn, { marginTop: 14 }]} activeOpacity={0.9} onPress={async () => {
-              const picked = (doneRows || []).filter((r, idx) => selectedIds[`${r.poNo}-${r.designNo}-${idx}`]);
+              // Get only the items that are checked
+              const availableRows = (doneRows || []).filter(r => !r.pdfDownloaded);
+              const picked = availableRows.filter((r, idx) => selectedIds[`${r.poNo}-${r.designNo}-${idx}`]);
+              
+              if (picked.length === 0) {
+                Alert.alert('No Selection', 'Please select at least one item to download.');
+                return;
+              }
+              
               try {
+                const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
                 const html = buildChallanHtmlImageLike(picked);
-                const savedPath = await savePdfToDownloads(html);
-                Alert.alert('Download complete', savedPath ? `Saved to: ${savedPath}` : 'Saved');
+                
+                // Get next Butta counter
+                const buttaCounterRef = await AsyncStorage.getItem('butta_challan_counter_white');
+                const nextNo = buttaCounterRef ? parseInt(buttaCounterRef) + 1 : 1;
+                await AsyncStorage.setItem('butta_challan_counter_white', String(nextNo));
+                
+                const filename = `Butta - ${String(nextNo)}.pdf`;
+                const savedPath = await savePdfToDownloads(html, filename);
+                
+                // Mark selected rows as PDF downloaded (match by poNo and designNo)
+                const selectedPoDesigns = picked.map(p => `${p.poNo}-${p.designNo}`);
+                const updatedDoneRows = doneRows.map((r) => {
+                  const rowKey = `${r.poNo}-${r.designNo}`;
+                  if (selectedPoDesigns.includes(rowKey)) {
+                    return { ...r, pdfDownloaded: true };
+                  }
+                  return r;
+                });
+                
+                // Save updated done rows to Firebase
+                await jecardFirebaseUtils.saveWhiteJecardDoneRows(updatedDoneRows, tenantId);
+                setDoneRows(updatedDoneRows);
+                
+                Alert.alert('Download complete', `PDF saved as ${filename}`);
               } catch (e) {
-                Alert.alert('PDF', 'Could not save PDF. Please install expo-print and restart (reset cache).');
+                console.error('PDF generation error:', e);
+                Alert.alert('PDF Error', 'Could not save PDF. Please try again.');
               }
               setShowChallan(false);
               setSelectedIds({});

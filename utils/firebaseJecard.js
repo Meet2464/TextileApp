@@ -244,6 +244,323 @@ export const jecardFirebaseUtils = {
       globalThis.__challanCounter = fallback;
       return fallback;
     }
+  },
+
+  // Save party order pending rows to Firebase
+  savePartyOrderRows: async (rows, tenantId = 'default') => {
+    try {
+      const partyOrderRef = doc(db, 'tenants', tenantId, 'partyOrder', 'pending');
+      await setDoc(partyOrderRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'party_order_pending'
+      });
+      
+      // Also save to AsyncStorage as backup
+      await AsyncStorage.setItem('party_order_rows', JSON.stringify(rows));
+      console.log('Party order pending rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving party order rows to Firebase:', error);
+      // Fallback to AsyncStorage only
+      await AsyncStorage.setItem('party_order_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Save party order done rows to Firebase
+  savePartyOrderDoneRows: async (rows, tenantId = 'default') => {
+    try {
+      const partyOrderRef = doc(db, 'tenants', tenantId, 'partyOrder', 'done');
+      await setDoc(partyOrderRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'party_order_done'
+      });
+      
+      // Also save to AsyncStorage as backup
+      await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(rows));
+      console.log('Party order done rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving party order done rows to Firebase:', error);
+      // Fallback to AsyncStorage only
+      await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Load party order pending rows from Firebase
+  loadPartyOrderRows: async (tenantId = 'default') => {
+    try {
+      const partyOrderRef = doc(db, 'tenants', tenantId, 'partyOrder', 'pending');
+      const docSnap = await getDoc(partyOrderRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const rows = data.rows || [];
+        
+        // Also save to AsyncStorage for offline access
+        await AsyncStorage.setItem('party_order_rows', JSON.stringify(rows));
+        console.log('Party order pending rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        // If no Firebase data, try AsyncStorage
+        const localData = await AsyncStorage.getItem('party_order_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading party order rows from Firebase:', error);
+      // Fallback to AsyncStorage
+      try {
+        const localData = await AsyncStorage.getItem('party_order_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch (localError) {
+        console.error('Error loading from AsyncStorage:', localError);
+        return [];
+      }
+    }
+  },
+
+  // Load party order done rows from Firebase
+  loadPartyOrderDoneRows: async (tenantId = 'default') => {
+    try {
+      const partyOrderRef = doc(db, 'tenants', tenantId, 'partyOrder', 'done');
+      const docSnap = await getDoc(partyOrderRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const rows = data.rows || [];
+        
+        // Also save to AsyncStorage for offline access
+        await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(rows));
+        console.log('Party order done rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        // If no Firebase data, try AsyncStorage
+        const localData = await AsyncStorage.getItem('party_order_done_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading party order done rows from Firebase:', error);
+      // Fallback to AsyncStorage
+      try {
+        const localData = await AsyncStorage.getItem('party_order_done_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch (localError) {
+        console.error('Error loading from AsyncStorage:', localError);
+        return [];
+      }
+    }
+  },
+
+  // Save white saree jecard rows to Firebase
+  saveWhiteJecardRows: async (rows, tenantId = 'default') => {
+    try {
+      const jecardRef = doc(db, 'tenants', tenantId, 'jecard', 'white_pending');
+      await setDoc(jecardRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'white_pending'
+      });
+      
+      await AsyncStorage.setItem('jecard_white_rows', JSON.stringify(rows));
+      console.log('White jecard rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving white jecard rows to Firebase:', error);
+      await AsyncStorage.setItem('jecard_white_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Load white saree jecard rows from Firebase
+  loadWhiteJecardRows: async (tenantId = 'default') => {
+    try {
+      const jecardRef = doc(db, 'tenants', tenantId, 'jecard', 'white_pending');
+      const docSnap = await getDoc(jecardRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const rows = data.rows || [];
+        
+        await AsyncStorage.setItem('jecard_white_rows', JSON.stringify(rows));
+        console.log('White jecard rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('jecard_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading white jecard rows from Firebase:', error);
+      try {
+        const localData = await AsyncStorage.getItem('jecard_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch (localError) {
+        console.error('Error loading from AsyncStorage:', localError);
+        return [];
+      }
+    }
+  },
+
+  // Save garment jecard rows to Firebase
+  saveGarmentJecardRows: async (rows, tenantId = 'default') => {
+    try {
+      const jecardRef = doc(db, 'tenants', tenantId, 'jecard', 'garment_pending');
+      await setDoc(jecardRef, {
+        rows: rows,
+        lastUpdated: serverTimestamp(),
+        type: 'garment_pending'
+      });
+      
+      await AsyncStorage.setItem('jecard_garment_rows', JSON.stringify(rows));
+      console.log('Garment jecard rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving garment jecard rows to Firebase:', error);
+      await AsyncStorage.setItem('jecard_garment_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  // Load garment jecard rows from Firebase
+  loadGarmentJecardRows: async (tenantId = 'default') => {
+    try {
+      const jecardRef = doc(db, 'tenants', tenantId, 'jecard', 'garment_pending');
+      const docSnap = await getDoc(jecardRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const rows = data.rows || [];
+        
+        await AsyncStorage.setItem('jecard_garment_rows', JSON.stringify(rows));
+        console.log('Garment jecard rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('jecard_garment_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading garment jecard rows from Firebase:', error);
+      try {
+        const localData = await AsyncStorage.getItem('jecard_garment_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch (localError) {
+        console.error('Error loading from AsyncStorage:', localError);
+        return [];
+      }
+    }
+  },
+
+  // Save/Load Butta Cutting data (Color)
+  saveButtaColorRows: async (rows, tenantId = 'default') => {
+    try {
+      const buttaRef = doc(db, 'tenants', tenantId, 'workflow', 'butta_color');
+      await setDoc(buttaRef, { rows, lastUpdated: serverTimestamp(), type: 'butta_color' });
+      await AsyncStorage.setItem('butta_color_rows', JSON.stringify(rows));
+      console.log('Butta color rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving butta color rows:', error);
+      await AsyncStorage.setItem('butta_color_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadButtaColorRows: async (tenantId = 'default') => {
+    try {
+      const buttaRef = doc(db, 'tenants', tenantId, 'workflow', 'butta_color');
+      const docSnap = await getDoc(buttaRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('butta_color_rows', JSON.stringify(rows));
+        console.log('Butta color rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('butta_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading butta color rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('butta_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // Save/Load Butta Cutting data (White)
+  saveButtaWhiteRows: async (rows, tenantId = 'default') => {
+    try {
+      const buttaRef = doc(db, 'tenants', tenantId, 'workflow', 'butta_white');
+      await setDoc(buttaRef, { rows, lastUpdated: serverTimestamp(), type: 'butta_white' });
+      await AsyncStorage.setItem('butta_white_rows', JSON.stringify(rows));
+      console.log('Butta white rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving butta white rows:', error);
+      await AsyncStorage.setItem('butta_white_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadButtaWhiteRows: async (tenantId = 'default') => {
+    try {
+      const buttaRef = doc(db, 'tenants', tenantId, 'workflow', 'butta_white');
+      const docSnap = await getDoc(buttaRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('butta_white_rows', JSON.stringify(rows));
+        console.log('Butta white rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('butta_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading butta white rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('butta_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // Save/Load White Jecard Done rows
+  saveWhiteJecardDoneRows: async (rows, tenantId = 'default') => {
+    try {
+      const jecardRef = doc(db, 'tenants', tenantId, 'jecard', 'white_done');
+      await setDoc(jecardRef, { rows, lastUpdated: serverTimestamp(), type: 'white_done' });
+      await AsyncStorage.setItem('jecard_white_done_rows', JSON.stringify(rows));
+      console.log('White jecard done rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving white jecard done rows:', error);
+      await AsyncStorage.setItem('jecard_white_done_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadWhiteJecardDoneRows: async (tenantId = 'default') => {
+    try {
+      const jecardRef = doc(db, 'tenants', tenantId, 'jecard', 'white_done');
+      const docSnap = await getDoc(jecardRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('jecard_white_done_rows', JSON.stringify(rows));
+        console.log('White jecard done rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('jecard_white_done_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading white jecard done rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('jecard_white_done_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
   }
 };
 

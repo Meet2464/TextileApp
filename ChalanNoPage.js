@@ -13,10 +13,13 @@ import SelectSaree from './SelectSaree';
 import ReceivingChallanList from './ReceivingChallanList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { jecardFirebaseUtils } from './utils/firebaseJecard';
+import { useUser } from './contexts/UserContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function ChalanNoPage({ navigation }) {
+  const { userData, getTenantId } = useUser?.() || {};
   const [showSelect, setShowSelect] = useState(false);
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
@@ -106,17 +109,18 @@ export default function ChalanNoPage({ navigation }) {
     if (showPartyOrder) {
       (async () => {
         try {
-          const raw = await AsyncStorage.getItem('party_order_rows');
-          setPartyRows(raw ? JSON.parse(raw) : []);
-          const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
-          setDoneRows(doneRaw ? JSON.parse(doneRaw) : []);
+          const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId)) || 'default';
+          const pending = await jecardFirebaseUtils.loadPartyOrderRows(tenantId);
+          setPartyRows(pending);
+          const done = await jecardFirebaseUtils.loadPartyOrderDoneRows(tenantId);
+          setDoneRows(done);
         } catch {
           setPartyRows([]);
           setDoneRows([]);
         }
       })();
     }
-  }, [showPartyOrder]);
+  }, [showPartyOrder, userData, getTenantId]);
 
   // Receiving Challan button can be wired later to the desired flow
 
@@ -335,6 +339,8 @@ export default function ChalanNoPage({ navigation }) {
                   style={[styles.sendButton, { marginTop: 22 }]}
                   onPress={async () => {
                     try {
+                      const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId)) || 'default';
+                      
                       // Build sent row with entered quantities
                       const enriched = {
                         ...(selectedOrder || {}),
@@ -344,22 +350,26 @@ export default function ChalanNoPage({ navigation }) {
                         withBlouse: sendCategory === 'garment' ? undefined : !!withBlouse,
                       };
 
-                      // Update pending -> done
-                      const pendingRaw = await AsyncStorage.getItem('party_order_rows');
-                      const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+                      // Update pending -> done in Firebase
+                      const pending = await jecardFirebaseUtils.loadPartyOrderRows(tenantId);
                       const nextPending = pending.filter((r) => !(String(r.poNo) === String(enriched.poNo) && String(r.designNo) === String(enriched.designNo) && String(r.partyName) === String(enriched.partyName)));
-                      await AsyncStorage.setItem('party_order_rows', JSON.stringify(nextPending));
+                      await jecardFirebaseUtils.savePartyOrderRows(nextPending, tenantId);
 
-                      const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
-                      const doneList = doneRaw ? JSON.parse(doneRaw) : [];
+                      const doneList = await jecardFirebaseUtils.loadPartyOrderDoneRows(tenantId);
                       const nextDone = [...doneList, enriched];
-                      await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(nextDone));
+                      await jecardFirebaseUtils.savePartyOrderDoneRows(nextDone, tenantId);
 
-                      // Enqueue to Jecard list
-                      const jKey = sendCategory === 'white' ? 'jecard_white_rows' : (sendCategory === 'color' ? 'jecard_color_rows' : 'jecard_garment_rows');
-                      const jRaw = await AsyncStorage.getItem(jKey);
-                      const jList = jRaw ? JSON.parse(jRaw) : [];
-                      await AsyncStorage.setItem(jKey, JSON.stringify([...jList, enriched]));
+                      // Enqueue to Jecard list in Firebase
+                      if (sendCategory === 'white') {
+                        const jList = await jecardFirebaseUtils.loadWhiteJecardRows(tenantId);
+                        await jecardFirebaseUtils.saveWhiteJecardRows([...jList, enriched], tenantId);
+                      } else if (sendCategory === 'color') {
+                        const jList = await jecardFirebaseUtils.loadPendingRows(tenantId);
+                        await jecardFirebaseUtils.savePendingRows([...jList, enriched], tenantId);
+                      } else {
+                        const jList = await jecardFirebaseUtils.loadGarmentJecardRows(tenantId);
+                        await jecardFirebaseUtils.saveGarmentJecardRows([...jList, enriched], tenantId);
+                      }
 
                       // Update local state
                       setPartyRows(nextPending);
@@ -371,6 +381,7 @@ export default function ChalanNoPage({ navigation }) {
                       setSendPiece('');
                       setSendMtr('');
                     } catch (e) {
+                      console.error('Error sending to jecard:', e);
                       setShowSendModal(false);
                       setSelectedOrder(null);
                     }

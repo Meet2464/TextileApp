@@ -16,6 +16,7 @@ import { db } from './firebase';
 import { useUser } from './contexts/UserContext';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, updateDoc, deleteDoc, where, onSnapshot } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jecardFirebaseUtils } from './utils/firebaseJecard';
 // SelectSaree is now accessible only via Reports
 // Removed Color/White/Garment page imports per request
 
@@ -262,8 +263,10 @@ export default function OrderNoPage({ navigation }) {
       // Update in Firebase Firestore
       await updateDoc(doc(db, 'orders', editingOrder.id), orderData);
 
-      // Sync Party Order rows in AsyncStorage for this P.O. NO so Chalan page reflects edits
+      // Sync Party Order rows in Firebase for this P.O. NO so Chalan page reflects edits
       try {
+        const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId)) || 'default';
+        
         // Build fresh rows from edited data
         const rows = (Array.isArray(orderData.designNos) && orderData.designNos.length > 0
           ? orderData.designNos.map((dn, idx) => ({
@@ -282,21 +285,19 @@ export default function OrderNoPage({ navigation }) {
             }]);
         const cleanRows = rows.filter(r => (r.designNo || '').trim() !== '');
 
-        // Replace in pending list
-        const pendingRaw = await AsyncStorage.getItem('party_order_rows');
-        const pending = pendingRaw ? JSON.parse(pendingRaw) : [];
+        // Replace in pending list and save to Firebase
+        const pending = await jecardFirebaseUtils.loadPartyOrderRows(tenantId);
         const nextPending = Array.isArray(pending)
           ? [...pending.filter(r => String(r.poNo) !== String(editingOrder.poNo)), ...cleanRows]
           : [...cleanRows];
-        await AsyncStorage.setItem('party_order_rows', JSON.stringify(nextPending));
+        await jecardFirebaseUtils.savePartyOrderRows(nextPending, tenantId);
 
-        // Replace in done list as well (if any were already sent)
-        const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
-        const done = doneRaw ? JSON.parse(doneRaw) : [];
+        // Replace in done list as well (if any were already sent) and save to Firebase
+        const done = await jecardFirebaseUtils.loadPartyOrderDoneRows(tenantId);
         const nextDone = Array.isArray(done)
           ? [...done.filter(r => String(r.poNo) !== String(editingOrder.poNo)), ...cleanRows]
           : [...cleanRows];
-        await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(nextDone));
+        await jecardFirebaseUtils.savePartyOrderDoneRows(nextDone, tenantId);
       } catch (syncErr) {
         console.log('Party Order sync warning:', syncErr?.message || syncErr);
       }
@@ -339,23 +340,29 @@ export default function OrderNoPage({ navigation }) {
             try {
               await deleteDoc(doc(db, 'orders', order.id));
 
-              // Remove from Party Order (pending and done) and any Jecard queues
+              // Remove from Party Order (pending and done) and any Jecard queues in Firebase
               try {
+                const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId)) || 'default';
                 const poNoStr = String(order.poNo);
-                const pendingRaw = await AsyncStorage.getItem('party_order_rows');
-                const doneRaw = await AsyncStorage.getItem('party_order_done_rows');
-                const colorRaw = await AsyncStorage.getItem('jecard_color_rows');
-                const whiteRaw = await AsyncStorage.getItem('jecard_white_rows');
-                const garmentRaw = await AsyncStorage.getItem('jecard_garment_rows');
-
+                
                 const filterOutPo = (arr) =>
                   Array.isArray(arr) ? arr.filter((r) => String(r?.poNo) !== poNoStr) : [];
 
-                await AsyncStorage.setItem('party_order_rows', JSON.stringify(filterOutPo(pendingRaw ? JSON.parse(pendingRaw) : [])));
-                await AsyncStorage.setItem('party_order_done_rows', JSON.stringify(filterOutPo(doneRaw ? JSON.parse(doneRaw) : [])));
-                await AsyncStorage.setItem('jecard_color_rows', JSON.stringify(filterOutPo(colorRaw ? JSON.parse(colorRaw) : [])));
-                await AsyncStorage.setItem('jecard_white_rows', JSON.stringify(filterOutPo(whiteRaw ? JSON.parse(whiteRaw) : [])));
-                await AsyncStorage.setItem('jecard_garment_rows', JSON.stringify(filterOutPo(garmentRaw ? JSON.parse(garmentRaw) : [])));
+                // Load, filter, and save back to Firebase
+                const pending = await jecardFirebaseUtils.loadPartyOrderRows(tenantId);
+                await jecardFirebaseUtils.savePartyOrderRows(filterOutPo(pending), tenantId);
+                
+                const done = await jecardFirebaseUtils.loadPartyOrderDoneRows(tenantId);
+                await jecardFirebaseUtils.savePartyOrderDoneRows(filterOutPo(done), tenantId);
+                
+                const colorRows = await jecardFirebaseUtils.loadPendingRows(tenantId);
+                await jecardFirebaseUtils.savePendingRows(filterOutPo(colorRows), tenantId);
+                
+                const whiteRows = await jecardFirebaseUtils.loadWhiteJecardRows(tenantId);
+                await jecardFirebaseUtils.saveWhiteJecardRows(filterOutPo(whiteRows), tenantId);
+                
+                const garmentRows = await jecardFirebaseUtils.loadGarmentJecardRows(tenantId);
+                await jecardFirebaseUtils.saveGarmentJecardRows(filterOutPo(garmentRows), tenantId);
               } catch (storageErr) {
                 console.log('Clean-up warning:', storageErr?.message || storageErr);
               }
@@ -470,12 +477,12 @@ export default function OrderNoPage({ navigation }) {
 
       const cleanRows = rows.filter(r => (r.designNo || '').trim() !== '');
       setPartyOrderRows(cleanRows);
-      // Persist rows for Chalan → Party Order page (append to existing pending list)
+      // Persist rows for Chalan → Party Order page (append to existing pending list) in Firebase
       try {
-        const existingRaw = await AsyncStorage.getItem('party_order_rows');
-        const existing = existingRaw ? JSON.parse(existingRaw) : [];
+        const tenantId = (typeof getTenantId === 'function' ? getTenantId() : (userData?.companyId)) || 'default';
+        const existing = await jecardFirebaseUtils.loadPartyOrderRows(tenantId);
         const merged = Array.isArray(existing) ? [...existing, ...cleanRows] : [...cleanRows];
-        await AsyncStorage.setItem('party_order_rows', JSON.stringify(merged));
+        await jecardFirebaseUtils.savePartyOrderRows(merged, tenantId);
       } catch {}
       setShowInsertModal(false);
       // Optional: could navigate user to Chalan page manually; staying here as requested earlier

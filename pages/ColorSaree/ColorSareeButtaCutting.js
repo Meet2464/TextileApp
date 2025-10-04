@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../../contexts/UserContext';
+import jecardFirebaseUtils from '../../utils/firebaseJecard';
 
 export default function ColorSareeButtaCutting({ navigation }) {
+  const { userData } = useUser();
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem('butta_color_rows');
-        setRows(raw ? JSON.parse(raw) : []);
+        const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
+        const data = await jecardFirebaseUtils.loadButtaColorRows(tenantId);
+        setRows(data);
       } catch {
         setRows([]);
       }
     })();
-  }, []);
+  }, [userData]);
 
   return (
     <View style={styles.container}>

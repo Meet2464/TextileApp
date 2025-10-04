@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { jecardFirebaseUtils } from '../utils/firebaseJecard';
 
 const UserContext = createContext();
 
@@ -18,6 +19,43 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Load all data from Firebase when user logs in
+  const loadAllDataFromFirebase = async (tenantId) => {
+    try {
+      console.log('Loading all data from Firebase for tenant:', tenantId);
+      
+      // Load all data types in parallel
+      await Promise.all([
+        // Party Order data
+        jecardFirebaseUtils.loadPartyOrderRows(tenantId),
+        jecardFirebaseUtils.loadPartyOrderDoneRows(tenantId),
+        
+        // Color Saree Jecard data
+        jecardFirebaseUtils.loadPendingRows(tenantId),
+        jecardFirebaseUtils.loadDoneRows(tenantId),
+        
+        // White Saree Jecard data
+        jecardFirebaseUtils.loadWhiteJecardRows(tenantId),
+        jecardFirebaseUtils.loadWhiteJecardDoneRows(tenantId),
+        
+        // Garment Jecard data
+        jecardFirebaseUtils.loadGarmentJecardRows(tenantId),
+        
+        // Butta Cutting data
+        jecardFirebaseUtils.loadButtaColorRows(tenantId),
+        jecardFirebaseUtils.loadButtaWhiteRows(tenantId),
+        
+        // Challan counter
+        jecardFirebaseUtils.loadChallanCounter(tenantId)
+      ]);
+      
+      console.log('All data loaded from Firebase successfully');
+    } catch (error) {
+      console.error('Error loading data from Firebase:', error);
+      // Data will fall back to AsyncStorage if Firebase fails
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -46,6 +84,10 @@ export const UserProvider = ({ children }) => {
             
             // Store user data in AsyncStorage for persistence
             await AsyncStorage.setItem('userData', JSON.stringify(userData));
+            
+            // Load all data from Firebase after successful login
+            const tenantId = userData.companyId || userData.company?.id || userData.companyName || 'default';
+            await loadAllDataFromFirebase(tenantId);
           } else {
             // If no user data in Firestore, try to get from AsyncStorage first
             try {
@@ -67,6 +109,10 @@ export const UserProvider = ({ children }) => {
                 
                 setUser(firebaseUser);
                 setUserData(userData);
+                
+                // Load all data from Firebase
+                const tenantId = userData.companyId || userData.company?.id || userData.companyName || 'default';
+                await loadAllDataFromFirebase(tenantId);
               } else {
                 // If no stored data, sign out
                 await signOut(auth);
@@ -115,6 +161,10 @@ export const UserProvider = ({ children }) => {
                         setUser(firebaseUser);
                         setUserData(userData);
                         console.log('Using cached user data due to offline status');
+                        
+                        // Try to load data from Firebase even when offline (will use AsyncStorage fallback)
+                        const tenantId = userData.companyId || userData.company?.id || userData.companyName || 'default';
+                        await loadAllDataFromFirebase(tenantId);
                       } else {
                         // If no cached data and offline, still set user but no userData
                         setUser(firebaseUser);
