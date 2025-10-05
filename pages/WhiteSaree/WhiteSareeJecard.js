@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, Platform } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system/legacy';
 // Removed notifications to avoid Expo Go push limitations
@@ -49,7 +50,7 @@ export default function WhiteSareeJecard({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack?.()}>
-          <Text style={styles.backText}>{'<'}</Text>
+          <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>White Saree - Jecard</Text>
         <View style={{ width: 24 }} />
@@ -138,7 +139,7 @@ export default function WhiteSareeJecard({ navigation }) {
               <View style={styles.previewHeader}>
                 <Text style={styles.previewTitle}>Order Preview</Text>
                 <TouchableOpacity onPress={() => { setShowPreview(false); setSelectedRow(null); }}>
-                  <Text style={styles.closeText}>×</Text>
+                  <Icon name="close-circle-outline" size={28} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
               <View style={styles.previewTableHeader}>
@@ -265,7 +266,9 @@ export default function WhiteSareeJecard({ navigation }) {
           <View style={styles.modalCard}>
             <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Delivery Challan</Text>
-              <TouchableOpacity onPress={() => setShowChallan(false)}><Text style={styles.closeText}>×</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowChallan(false)}>
+                <Icon name="close-circle-outline" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
 
             <ScrollView style={{ maxHeight: 420 }}>

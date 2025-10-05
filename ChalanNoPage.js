@@ -8,9 +8,11 @@ import {
   Modal,
   TextInput,
   Alert,
+  ScrollView,
 } from 'react-native';
 import SelectSaree from './SelectSaree';
 import ReceivingChallanList from './ReceivingChallanList';
+import ComingSoon from './ComingSoon';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { jecardFirebaseUtils } from './utils/firebaseJecard';
@@ -23,6 +25,7 @@ export default function ChalanNoPage({ navigation }) {
   const [showSelect, setShowSelect] = useState(false);
   const [allowedType, setAllowedType] = useState(null);
   const [showPartyOrder, setShowPartyOrder] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const [partyRows, setPartyRows] = useState([]);
   const [doneRows, setDoneRows] = useState([]);
   const [poActiveTab, setPoActiveTab] = useState('pending'); // 'pending' | 'done'
@@ -143,6 +146,11 @@ export default function ChalanNoPage({ navigation }) {
     );
   }
 
+  // Coming Soon page for Garments
+  if (showComingSoon) {
+    return <ComingSoon navigation={navigation} title="Garments" />;
+  }
+
   // Party Order summary page (reads rows saved from Order page)
   if (showPartyOrder) {
     return (
@@ -161,9 +169,9 @@ export default function ChalanNoPage({ navigation }) {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.content}>
-          <View style={{ flex: 1 }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 10 }}>
             {poActiveTab === 'pending' ? (
-              <View style={{ paddingHorizontal: 10 }}>
+              <>
                 <View style={styles.poTableHeader}>
                   <Text style={styles.poHeaderCell}>P.O.NO</Text>
                   <Text style={styles.poHeaderCell}>PARTY NAME</Text>
@@ -193,9 +201,9 @@ export default function ChalanNoPage({ navigation }) {
                     </TouchableOpacity>
                   </View>
                 ))}
-              </View>
+              </>
             ) : (
-              <View style={{ paddingHorizontal: 10 }}>
+              <>
                 <View style={styles.poTableHeader}>
                   <Text style={styles.poHeaderCell}>P.O.NO</Text>
                   <Text style={styles.poHeaderCell}>PARTY NAME</Text>
@@ -203,7 +211,7 @@ export default function ChalanNoPage({ navigation }) {
                   <Text style={styles.poHeaderCell}>QTY</Text>
                   <Text style={styles.poHeaderCell}>STATUS</Text>
                 </View>
-                {doneRows.map((row, idx) => (
+                {[...doneRows].reverse().map((row, idx) => (
                   <View key={`drow-${idx}`} style={styles.poTableRow}>
                     <Text style={styles.poCell}>{String(row.poNo)}</Text>
                     <Text style={styles.poCell}>{String(row.partyName)}</Text>
@@ -212,9 +220,9 @@ export default function ChalanNoPage({ navigation }) {
                     <Text style={[styles.poCell, { color: '#10B981' }]}>DONE</Text>
                   </View>
                 ))}
-              </View>
+              </>
             )}
-          </View>
+          </ScrollView>
 
           {/* Bottom two-button panel (sticky at bottom of Party Order) */}
           <View style={styles.bottomPanel}>
@@ -279,16 +287,12 @@ export default function ChalanNoPage({ navigation }) {
 
                 {/* Content area */}
                 {sendCategory === 'garment' ? (
-                  <View style={{ marginTop: 16 }}>
-                    <Text style={styles.inputLabel}>Mtr</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      keyboardType="numeric"
-                      value={sendMtr}
-                      onChangeText={setSendMtr}
-                      placeholder="0"
-                      placeholderTextColor="#999"
-                    />
+                  <View style={{ marginTop: 24, alignItems: 'center', paddingVertical: 40 }}>
+                    <Icon name="construct-outline" size={60} color="#00BFFF" />
+                    <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '700', marginTop: 16 }}>Coming Soon</Text>
+                    <Text style={{ color: '#999', fontSize: 14, marginTop: 8, textAlign: 'center' }}>
+                      Garments feature is under development
+                    </Text>
                   </View>
                 ) : (
                   <View style={{ marginTop: 10 }}>
@@ -335,6 +339,7 @@ export default function ChalanNoPage({ navigation }) {
                   </View>
                 )}
 
+                {sendCategory !== 'garment' && (
                 <TouchableOpacity
                   style={[styles.sendButton, { marginTop: 22 }]}
                   onPress={async () => {
@@ -390,6 +395,7 @@ export default function ChalanNoPage({ navigation }) {
                 >
                   <Text style={styles.sendButtonText}>Send</Text>
                 </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
@@ -428,7 +434,7 @@ export default function ChalanNoPage({ navigation }) {
             <TouchableOpacity style={styles.reportButton} onPress={() => { setAllowedType('white'); setShowSelect(true); }}>
               <Text style={styles.reportButtonText}>WHITE SAREE</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.reportButton} onPress={() => { setAllowedType('garment'); setShowSelect(true); }}>
+            <TouchableOpacity style={styles.reportButton} onPress={() => setShowComingSoon(true)}>
               <Text style={styles.reportButtonText}>GARMENTS</Text>
             </TouchableOpacity>
           </View>

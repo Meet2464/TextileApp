@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useUser } from '../../contexts/UserContext';
 import jecardFirebaseUtils from '../../utils/firebaseJecard';
 
@@ -23,7 +24,7 @@ export default function ColorSareeDelivery({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack?.()}>
-          <Text style={styles.backText}>{'<'}</Text>
+          <Icon name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Color Saree - Delivery</Text>
         <View style={{ width: 24 }} />
