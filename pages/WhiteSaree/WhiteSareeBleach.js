@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, Alert, Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,12 @@ export default function WhiteSareeBleach({ navigation }) {
   const [activeTab, setActiveTab] = useState('pending');
   const [showChallan, setShowChallan] = useState(false);
   const [selectedIds, setSelectedIds] = useState({});
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [clientName, setClientName] = useState('');
+  const [chalanNo, setChalanNo] = useState('');
+  const [pieceVal, setPieceVal] = useState('');
+  const [mtrVal, setMtrVal] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -25,34 +31,8 @@ export default function WhiteSareeBleach({ navigation }) {
     })();
   }, [userData]);
 
-  const pendingRows = rows.filter(r => !r.sentToDelivery);
-  const doneRows = rows.filter(r => r.sentToDelivery);
-
-  const handleSendToDelivery = async (row) => {
-    try {
-      const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
-      
-      // Mark as sent to delivery
-      const updatedRows = rows.map(r => 
-        (r.poNo === row.poNo && r.designNo === row.designNo) 
-          ? { ...r, sentToDelivery: true } 
-          : r
-      );
-      
-      // Save to Firebase
-      await jecardFirebaseUtils.saveBleachWhiteRows(updatedRows, tenantId);
-      
-      // Add to Delivery workflow
-      const deliveryData = await jecardFirebaseUtils.loadDeliveryWhiteRows(tenantId);
-      await jecardFirebaseUtils.saveDeliveryWhiteRows([...deliveryData, { ...row, sentToDelivery: true }], tenantId);
-      
-      setRows(updatedRows);
-      Alert.alert('Success', 'Item sent to Delivery successfully!');
-    } catch (error) {
-      console.error('Error sending to delivery:', error);
-      Alert.alert('Error', 'Failed to send item. Please try again.');
-    }
-  };
+  const pendingRows = rows.filter(r => !r.sentToCotting);
+  const doneRows = rows.filter(r => r.sentToCotting);
 
   return (
     <View style={styles.container}>
@@ -75,6 +55,19 @@ export default function WhiteSareeBleach({ navigation }) {
             <TouchableOpacity 
               key={`row-${idx}`} 
               style={styles.tableRow}
+              onPress={() => {
+                if (activeTab === 'done') {
+                  setSelectedRow(r);
+                  setShowPreview(true);
+                } else {
+                  setSelectedRow(r);
+                  setClientName('');
+                  setChalanNo('');
+                  setPieceVal('');
+                  setMtrVal('');
+                  setShowPreview(true);
+                }
+              }}
               activeOpacity={activeTab === 'done' ? 0.7 : 1}
               disabled={activeTab === 'pending'}
             >
@@ -84,7 +77,14 @@ export default function WhiteSareeBleach({ navigation }) {
               {activeTab === 'pending' ? (
                 <TouchableOpacity
                   style={{ flex: 1, alignItems: 'center' }}
-                  onPress={() => handleSendToDelivery(r)}
+                  onPress={() => {
+                    setSelectedRow(r);
+                    setClientName('');
+                    setChalanNo('');
+                    setPieceVal('');
+                    setMtrVal('');
+                    setShowPreview(true);
+                  }}
                 >
                   <Text style={[styles.cell, { color: '#10B981', fontWeight: '700' }]}>SEND</Text>
                 </TouchableOpacity>
@@ -116,6 +116,129 @@ export default function WhiteSareeBleach({ navigation }) {
             <Text style={styles.pillText}>done data</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Preview Modal */}
+        {showPreview && selectedRow && (
+          <View style={styles.previewOverlay}>
+            <View style={styles.previewBox}>
+              <View style={styles.previewHeader}>
+                <Text style={styles.previewTitle}>Order Preview</Text>
+                <TouchableOpacity onPress={() => { setShowPreview(false); setSelectedRow(null); }}>
+                  <Text style={styles.closeText}>×</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.previewTableHeader}>
+                <Text style={styles.previewHeaderCell}>P.O.NO</Text>
+                <Text style={styles.previewHeaderCell}>PARTY NAME</Text>
+                <Text style={styles.previewHeaderCell}>D.NO</Text>
+                <Text style={styles.previewHeaderCell}>PIECE</Text>
+              </View>
+              <View style={styles.previewTableRow}>
+                <Text style={styles.previewBodyCell}>{String(selectedRow.poNo)}</Text>
+                <Text style={styles.previewBodyCell}>{String(selectedRow.partyName || selectedRow.clientName || '-')}</Text>
+                <Text style={styles.previewBodyCell}>{String(selectedRow.designNo)}</Text>
+                <Text style={styles.previewBodyCell}>{String(selectedRow.piece || selectedRow.qty || '-')}</Text>
+              </View>
+
+              {/* Extra fields below preview */}
+              <View style={{ marginTop: 14 }}>
+                <Text style={styles.inputLabel}>Client Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Client Name"
+                  placeholderTextColor="#999"
+                  value={clientName}
+                  onChangeText={setClientName}
+                />
+              </View>
+              <View style={{ marginTop: 12 }}>
+                <Text style={styles.inputLabel}>Chalan No</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Chalan No"
+                  placeholderTextColor="#999"
+                  value={chalanNo}
+                  onChangeText={setChalanNo}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Piece</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={pieceVal}
+                    onChangeText={(txt) => {
+                      const digits = (txt || '').replace(/[^0-9]/g, '');
+                      const max = Number(selectedRow?.piece ?? selectedRow?.qty ?? 0) || 0;
+                      const valNum = Number(digits || 0);
+                      const clamped = Math.min(valNum, max);
+                      setPieceVal(clamped === 0 && digits === '' ? '' : String(clamped));
+                    }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>Mtr</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={mtrVal}
+                    onChangeText={setMtrVal}
+                  />
+                </View>
+              </View>
+
+              {activeTab === 'pending' && (
+              <TouchableOpacity
+                style={{ marginTop: 16, backgroundColor: '#FF6B35', borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ff5722' }}
+                onPress={async () => {
+                  try {
+                    const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
+
+                    // Enrich the row with user input
+                    const enriched = { ...selectedRow, clientName, chalanNo, piece: pieceVal, mtr: mtrVal, sentToCotting: true };
+
+                    // Update bleach rows - mark as sent
+                    const updatedRows = rows.map(r => 
+                      (r.poNo === selectedRow.poNo && r.designNo === selectedRow.designNo) 
+                        ? enriched 
+                        : r
+                    );
+                    await jecardFirebaseUtils.saveBleachWhiteRows(updatedRows, tenantId);
+
+                    // Add to Cotting workflow
+                    const cottingData = await jecardFirebaseUtils.loadCottingWhiteRows(tenantId);
+                    const newCottingRow = {
+                      poNo: enriched.poNo,
+                      clientName: enriched.clientName || enriched.partyName || '',
+                      chalanNo: enriched.chalanNo || '',
+                      designNo: enriched.designNo || '',
+                      piece: enriched.piece || '',
+                      mtr: enriched.mtr || '',
+                    };
+                    await jecardFirebaseUtils.saveCottingWhiteRows([...cottingData, newCottingRow], tenantId);
+
+                    setRows(updatedRows);
+                    setShowPreview(false);
+                    setSelectedRow(null);
+                    setActiveTab('done');
+                    navigation?.navigate?.('WhiteSareeDelivery');
+                  } catch (error) {
+                    console.error('Error saving data:', error);
+                    Alert.alert('Error', 'Failed to save data. Please try again.');
+                  }
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '800' }}>Send</Text>
+              </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Delivery Challan Modal */}
@@ -168,12 +291,12 @@ export default function WhiteSareeBleach({ navigation }) {
                 const tenantId = userData?.companyId || userData?.company?.id || userData?.companyName || 'default';
                 const html = buildChallanHtml(picked);
                 
-                // Get next Delivery counter
-                const deliveryCounterRef = await AsyncStorage.getItem('delivery_challan_counter_white');
-                const nextNo = deliveryCounterRef ? parseInt(deliveryCounterRef) + 1 : 1;
-                await AsyncStorage.setItem('delivery_challan_counter_white', String(nextNo));
+                // Get next Cotting counter
+                const cottingCounterRef = await AsyncStorage.getItem('cotting_challan_counter_white');
+                const nextNo = cottingCounterRef ? parseInt(cottingCounterRef) + 1 : 1;
+                await AsyncStorage.setItem('cotting_challan_counter_white', String(nextNo));
                 
-                const filename = `W Delivery - ${String(nextNo)}.pdf`;
+                const filename = `W Cotting - ${String(nextNo)}.pdf`;
                 const savedPath = await savePdfToDownloads(html, filename);
                 
                 // Mark selected rows as PDF downloaded
@@ -397,4 +520,79 @@ const styles = StyleSheet.create({
   selectText: { color: '#FFFFFF', fontSize: 13, flex: 1 },
   downloadBtn: { backgroundColor: '#00FFFF', borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#7FFFD4' },
   downloadText: { color: '#003344', fontSize: 16, fontWeight: '900' },
+  previewOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  previewBox: {
+    backgroundColor: '#2A2A2A',
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  previewTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  previewTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  previewHeaderCell: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#00BFFF',
+    textAlign: 'center',
+  },
+  previewTableRow: {
+    flexDirection: 'row',
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
+  previewBodyCell: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  textInput: {
+    backgroundColor: '#3A3A3A',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    color: '#FFFFFF',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#555555',
+  },
 });

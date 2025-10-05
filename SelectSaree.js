@@ -13,7 +13,6 @@ import ColorSareeButtaCutting from './pages/ColorSaree/ColorSareeButtaCutting';
 import ColorSareeBleach from './pages/ColorSaree/ColorSareeBleach';
 import ColorSareeCotting from './pages/ColorSaree/ColorSareeCotting';
 import ColorSareePositionPrint from './pages/ColorSaree/ColorSareePositionPrint';
-import ColorSareeFinish from './pages/ColorSaree/ColorSareeFinish';
 import ColorSareeChecking from './pages/ColorSaree/ColorSareeChecking';
 import ColorSareeDelivery from './pages/ColorSaree/ColorSareeDelivery';
 import WhiteSareeJecard from './pages/WhiteSaree/WhiteSareeJecard';
@@ -31,7 +30,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
   const [showColorBleach, setShowColorBleach] = useState(false);
   const [showColorCotting, setShowColorCotting] = useState(false);
   const [showColorPositionPrint, setShowColorPositionPrint] = useState(false);
-  const [showColorFinish, setShowColorFinish] = useState(false);
   const [showColorChecking, setShowColorChecking] = useState(false);
   const [showColorDelivery, setShowColorDelivery] = useState(false);
   const [showWhiteJecard, setShowWhiteJecard] = useState(false);
@@ -43,7 +41,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
   const [showGarmentBleach, setShowGarmentBleach] = useState(false);
   const [showGarmentCotting, setShowGarmentCotting] = useState(false);
   const [showGarmentPositionPrint, setShowGarmentPositionPrint] = useState(false);
-  const [showGarmentFinish, setShowGarmentFinish] = useState(false);
   const [showGarmentChecking, setShowGarmentChecking] = useState(false);
   const [showGarmentDelivery, setShowGarmentDelivery] = useState(false);
 
@@ -75,9 +72,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
           break;
         case 'position-print':
           setShowColorPositionPrint(true);
-          break;
-        case 'finish':
-          setShowColorFinish(true);
           break;
         case 'checking':
           setShowColorChecking(true);
@@ -122,9 +116,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
           break;
         case 'position-print':
           setShowGarmentPositionPrint(true);
-          break;
-        case 'finish':
-          setShowGarmentFinish(true);
           break;
         case 'checking':
           setShowGarmentChecking(true);
@@ -242,13 +233,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
       fullWidth: false,
     },
     {
-      id: 'finish',
-      title: 'FINISH',
-      icon: 'checkmark-circle',
-      iconColor: '#FFD700',
-      fullWidth: false,
-    },
-    {
       id: 'checking',
       title: 'CHECKING',
       icon: 'search',
@@ -274,8 +258,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
       .map(btn => ({ ...btn, title: 'EMBROIDERY' })),
     // Position Print
     ...colorSareeButtons.filter(btn => btn.id === 'position-print'),
-    // Finish
-    ...colorSareeButtons.filter(btn => btn.id === 'finish'),
     // Checking
     ...colorSareeButtons.filter(btn => btn.id === 'checking'),
     // Delivery
@@ -325,14 +307,6 @@ export default function SelectSaree({ navigation, orderData, allowedType }) {
     return (
       <ColorSareePositionPrint
         navigation={{ goBack: () => setShowColorPositionPrint(false) }}
-        orderData={orderData}
-      />
-    );
-  }
-  if (showColorFinish) {
-    return (
-      <ColorSareeFinish
-        navigation={{ goBack: () => setShowColorFinish(false) }}
         orderData={orderData}
       />
     );

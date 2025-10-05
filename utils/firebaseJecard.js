@@ -699,6 +699,228 @@ export const jecardFirebaseUtils = {
         return localData ? JSON.parse(localData) : [];
       } catch { return []; }
     }
+  },
+
+  // ===== Color Saree Bleach Workflow =====
+  saveBleachColorRows: async (rows, tenantId = 'default') => {
+    try {
+      const bleachRef = doc(db, 'tenants', tenantId, 'workflow', 'bleach_color');
+      await setDoc(bleachRef, { rows, lastUpdated: serverTimestamp(), type: 'bleach_color' });
+      await AsyncStorage.setItem('bleach_color_rows', JSON.stringify(rows));
+      console.log('Color bleach rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving color bleach rows:', error);
+      await AsyncStorage.setItem('bleach_color_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadBleachColorRows: async (tenantId = 'default') => {
+    try {
+      const bleachRef = doc(db, 'tenants', tenantId, 'workflow', 'bleach_color');
+      const docSnap = await getDoc(bleachRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('bleach_color_rows', JSON.stringify(rows));
+        console.log('Color bleach rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('bleach_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading color bleach rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('bleach_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== Color Saree Cotting Workflow =====
+  saveCottingColorRows: async (rows, tenantId = 'default') => {
+    try {
+      const cottingRef = doc(db, 'tenants', tenantId, 'workflow', 'cotting_color');
+      await setDoc(cottingRef, { rows, lastUpdated: serverTimestamp(), type: 'cotting_color' });
+      await AsyncStorage.setItem('cotting_color_rows', JSON.stringify(rows));
+      console.log('Color cotting rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving color cotting rows:', error);
+      await AsyncStorage.setItem('cotting_color_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadCottingColorRows: async (tenantId = 'default') => {
+    try {
+      const cottingRef = doc(db, 'tenants', tenantId, 'workflow', 'cotting_color');
+      const docSnap = await getDoc(cottingRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('cotting_color_rows', JSON.stringify(rows));
+        console.log('Color cotting rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('cotting_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading color cotting rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('cotting_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== White Saree Cotting Workflow =====
+  saveCottingWhiteRows: async (rows, tenantId = 'default') => {
+    try {
+      const cottingRef = doc(db, 'tenants', tenantId, 'workflow', 'cotting_white');
+      await setDoc(cottingRef, { rows, lastUpdated: serverTimestamp(), type: 'cotting_white' });
+      await AsyncStorage.setItem('cotting_white_rows', JSON.stringify(rows));
+      console.log('White cotting rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving white cotting rows:', error);
+      await AsyncStorage.setItem('cotting_white_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadCottingWhiteRows: async (tenantId = 'default') => {
+    try {
+      const cottingRef = doc(db, 'tenants', tenantId, 'workflow', 'cotting_white');
+      const docSnap = await getDoc(cottingRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('cotting_white_rows', JSON.stringify(rows));
+        console.log('White cotting rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('cotting_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading white cotting rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('cotting_white_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== Color Saree Position Print Workflow =====
+  savePositionPrintColorRows: async (rows, tenantId = 'default') => {
+    try {
+      const positionPrintRef = doc(db, 'tenants', tenantId, 'workflow', 'positionprint_color');
+      await setDoc(positionPrintRef, { rows, lastUpdated: serverTimestamp(), type: 'positionprint_color' });
+      await AsyncStorage.setItem('positionprint_color_rows', JSON.stringify(rows));
+      console.log('Color position print rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving color position print rows:', error);
+      await AsyncStorage.setItem('positionprint_color_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadPositionPrintColorRows: async (tenantId = 'default') => {
+    try {
+      const positionPrintRef = doc(db, 'tenants', tenantId, 'workflow', 'positionprint_color');
+      const docSnap = await getDoc(positionPrintRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('positionprint_color_rows', JSON.stringify(rows));
+        console.log('Color position print rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('positionprint_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading color position print rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('positionprint_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== Color Saree Checking Workflow =====
+  saveCheckingColorRows: async (rows, tenantId = 'default') => {
+    try {
+      const checkingRef = doc(db, 'tenants', tenantId, 'workflow', 'checking_color');
+      await setDoc(checkingRef, { rows, lastUpdated: serverTimestamp(), type: 'checking_color' });
+      await AsyncStorage.setItem('checking_color_rows', JSON.stringify(rows));
+      console.log('Color checking rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving color checking rows:', error);
+      await AsyncStorage.setItem('checking_color_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadCheckingColorRows: async (tenantId = 'default') => {
+    try {
+      const checkingRef = doc(db, 'tenants', tenantId, 'workflow', 'checking_color');
+      const docSnap = await getDoc(checkingRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('checking_color_rows', JSON.stringify(rows));
+        console.log('Color checking rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('checking_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading color checking rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('checking_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
+  },
+
+  // ===== Color Saree Delivery Workflow =====
+  saveDeliveryColorRows: async (rows, tenantId = 'default') => {
+    try {
+      const deliveryRef = doc(db, 'tenants', tenantId, 'workflow', 'delivery_color');
+      await setDoc(deliveryRef, { rows, lastUpdated: serverTimestamp(), type: 'delivery_color' });
+      await AsyncStorage.setItem('delivery_color_rows', JSON.stringify(rows));
+      console.log('Color delivery rows saved to Firebase successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving color delivery rows:', error);
+      await AsyncStorage.setItem('delivery_color_rows', JSON.stringify(rows));
+      return false;
+    }
+  },
+
+  loadDeliveryColorRows: async (tenantId = 'default') => {
+    try {
+      const deliveryRef = doc(db, 'tenants', tenantId, 'workflow', 'delivery_color');
+      const docSnap = await getDoc(deliveryRef);
+      if (docSnap.exists()) {
+        const rows = docSnap.data().rows || [];
+        await AsyncStorage.setItem('delivery_color_rows', JSON.stringify(rows));
+        console.log('Color delivery rows loaded from Firebase successfully');
+        return rows;
+      } else {
+        const localData = await AsyncStorage.getItem('delivery_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      }
+    } catch (error) {
+      console.error('Error loading color delivery rows:', error);
+      try {
+        const localData = await AsyncStorage.getItem('delivery_color_rows');
+        return localData ? JSON.parse(localData) : [];
+      } catch { return []; }
+    }
   }
 };
 
