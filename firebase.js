@@ -8,13 +8,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Your Firebase configuration for TextileApp project
 const firebaseConfig = {
-  apiKey: "AIzaSyAVKB7XEoyYyL_27RsTeRzxCofBHq0-PmE",
-  authDomain: "textileapp-2464.firebaseapp.com",
-  projectId: "textileapp-2464",
-  storageBucket: "textileapp-2464.firebasestorage.app",
-  messagingSenderId: "752042436168",
-  appId: "1:752042436168:web:0ac4fe8a9e1ba318bc9a7d",
-  measurementId: "G-Q60VZP4TGK"
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+  measurementId: ""
 };
 
 // Initialize Firebase
